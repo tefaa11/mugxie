@@ -25,6 +25,7 @@ export function ProductDetailModal({
   onQuickOrder,
   isFavorite,
   onToggleFavorite,
+  onSelectCategory,
 }) {
   const [quantity, setQuantity] = useState(1)
   const [addedAnimation, setAddedAnimation] = useState(false)
@@ -231,9 +232,7 @@ export function ProductDetailModal({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#C84E97] uppercase tracking-wider font-heading">
-                    {product.category}
-                  </span>
+                  <div className="flex flex-wrap gap-1.5">{(product.categories?.length ? product.categories : [product.category]).map(category => <button key={category} type="button" onClick={() => { onSelectCategory?.(category); onClose() }} className="text-left text-xs font-bold text-[#C84E97] uppercase tracking-wider font-heading hover:underline" title={`Ver ${category} en el catálogo`}>{category}</button>)}</div>
                   {product.reference && (
                     <span className="bg-[#ebffd5] text-[#2c5315] border border-[#c2ebb0] text-xs font-extrabold px-2.5 py-0.5 rounded-md font-heading">
                       Ref: {product.reference}
@@ -268,7 +267,7 @@ export function ProductDetailModal({
                 {formatCOP(displayedProduct.price)}
               </div>
 
-              <p className="text-sm text-gray-600 leading-relaxed pt-1 line-clamp-2 sm:line-clamp-none">
+              <p className="text-sm text-gray-600 leading-relaxed pt-1">
                 {displayedProduct.description ||
                   'Mug coleccionable de cerámica fina con relieve 3D. Apto para microondas, acabado esmaltado brillante de alta durabilidad.'}
               </p>
@@ -276,10 +275,10 @@ export function ProductDetailModal({
               {/* Estado de stock con #ebffd5 */}
               <div className="pt-1">
                 {isAvailable ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#2c5315] bg-[#ebffd5] px-3.5 py-1.5 rounded-full border border-[#c2ebb0]">
+                  <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#2c5315] bg-[#ebffd5] px-3.5 py-1.5 rounded-full border border-[#c2ebb0]">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#2c5315] animate-pulse"></span>
                     {displayedProduct.isImmediateDelivery ? 'Disponible para entrega inmediata' : 'Disponible para pedir'}
-                  </span>
+                  </span>{displayedProduct.isLastUnit && <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-white bg-rose-500 px-3.5 py-1.5 rounded-full animate-pulse">🔥 Última unidad disponible</span>}</div>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-3.5 py-1.5 rounded-full border border-rose-200">
                     Agotado temporalmente (Pídelo por encargo)

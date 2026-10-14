@@ -81,6 +81,16 @@ export function ProductCard({
             Entrega inmediata
           </div>
         )}
+        {product.isLastUnit && isAvailable && (
+          <div className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs animate-pulse">
+            ¡Última unidad!
+          </div>
+        )}
+        {!product.isLastUnit && (product.variants || []).some(variant => variant.isLastUnit && variant.isAvailable !== false) && (
+          <div className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs animate-pulse">
+            ¡Un estilo es última unidad!
+          </div>
+        )}
         {(product.variants || []).length > 1 && (
           <div className="bg-white/90 text-[#C84E97] border border-pink-200 text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
             {product.variants.length} estilos

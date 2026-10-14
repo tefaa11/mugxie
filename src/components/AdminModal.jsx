@@ -60,6 +60,7 @@ export function AdminModal({
     badge: '',
     isAvailable: true,
     isImmediateDelivery: false,
+    isLastUnit: false,
     isVisible: true,
     image: '',
     images: [],
@@ -164,6 +165,7 @@ export function AdminModal({
       categories: (formData.categories || [formData.category]).filter(Boolean),
       category: (formData.categories || [formData.category]).filter(Boolean)[0] || formData.category,
       isImmediateDelivery: formData.isAvailable && formData.isImmediateDelivery,
+      isLastUnit: formData.isAvailable && formData.isLastUnit,
       reference: formData.reference?.trim() || `MG-${Date.now().toString().slice(-3)}`,
     }
 
@@ -734,12 +736,12 @@ export function AdminModal({
                       <div className="bg-white p-4 rounded-2xl border border-pink-200 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                           <div><h4 className="text-sm font-bold text-gray-800">Variantes: color o diseño</h4><p className="text-[11px] text-gray-500">Agrupa, por ejemplo, Mickey, Minnie y sus amigos en la misma publicación.</p></div>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: [...(prev.variants || []), { id: `var-${Date.now()}`, name: '', image: '', price: '', isAvailable: true, isImmediateDelivery: false }] }))} className="px-3 py-2 rounded-xl bg-pink-100 text-[#C84E97] text-xs font-bold">+ Añadir opción</button>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: [...(prev.variants || []), { id: `var-${Date.now()}`, name: '', image: '', price: '', isAvailable: true, isImmediateDelivery: false, isLastUnit: false }] }))} className="px-3 py-2 rounded-xl bg-pink-100 text-[#C84E97] text-xs font-bold">+ Añadir opción</button>
                         </div>
                         {(formData.variants || []).map((variant, index) => <div key={variant.id} className="grid grid-cols-1 sm:grid-cols-[1fr_130px_1fr_auto] gap-2 items-center bg-pink-50/50 p-3 rounded-xl">
                           <input required placeholder="Ej. Minnie rosada" value={variant.name} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, name: e.target.value } : v) }))} className="px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" />
                           <input type="number" step="1000" min="0" placeholder="Precio opcional" value={variant.price} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, price: e.target.value === '' ? '' : Number(e.target.value) } : v) }))} className="px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" />
-                          <div className="space-y-2"><div className="flex gap-1"><input placeholder="URL foto opcional" value={variant.image || ''} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, image: e.target.value } : v) }))} className="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" /><label className="cursor-pointer px-2 py-2 rounded-lg bg-pink-100 text-[#C84E97] text-xs font-bold">Foto<input type="file" accept="image/*" onChange={e => handleVariantImageUpload(e, index)} className="hidden" /></label></div><label className="flex items-center gap-1.5 text-[11px] font-bold text-[#2c5315] cursor-pointer"><input type="checkbox" checked={variant.isImmediateDelivery === true} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, isImmediateDelivery: e.target.checked } : v) }))} />Entrega inmediata</label></div>
+                          <div className="space-y-2"><div className="flex gap-1"><input placeholder="URL foto opcional" value={variant.image || ''} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, image: e.target.value } : v) }))} className="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" /><label className="cursor-pointer px-2 py-2 rounded-lg bg-pink-100 text-[#C84E97] text-xs font-bold">Foto<input type="file" accept="image/*" onChange={e => handleVariantImageUpload(e, index)} className="hidden" /></label></div><label className="flex items-center gap-1.5 text-[11px] font-bold text-[#2c5315] cursor-pointer"><input type="checkbox" checked={variant.isImmediateDelivery === true} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, isImmediateDelivery: e.target.checked } : v) }))} />Entrega inmediata</label><label className="flex items-center gap-1.5 text-[11px] font-bold text-rose-700 cursor-pointer"><input type="checkbox" checked={variant.isLastUnit === true} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, isLastUnit: e.target.checked } : v) }))} />Última unidad</label></div>
                           <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: prev.variants.filter((_, i) => i !== index) }))} className="text-rose-600 text-xs font-bold px-2">Quitar</button>
                         </div>)}
                       </div>
@@ -767,6 +769,11 @@ export function AdminModal({
                             className="w-4 h-4 text-[#C84E97] rounded-sm focus:ring-[#C84E97] disabled:opacity-40"
                           />
                           <span>Disponible para entrega inmediata</span>
+                        </label>
+
+                        <label className={`flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-bold ${formData.isAvailable ? 'text-rose-700' : 'text-gray-400'}`}>
+                          <input type="checkbox" checked={Boolean(formData.isLastUnit)} disabled={!formData.isAvailable} onChange={(e) => setFormData({ ...formData, isLastUnit: e.target.checked })} className="w-4 h-4 text-[#C84E97] rounded-sm focus:ring-[#C84E97] disabled:opacity-40" />
+                          <span>Última unidad disponible</span>
                         </label>
 
                       </div>

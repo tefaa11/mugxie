@@ -400,6 +400,12 @@ export default function App() {
           onQuickOrder={handleQuickOrder}
           isFavorite={favorites.includes(selectedProductDetail.id)}
           onToggleFavorite={handleToggleFavorite}
+          onSelectCategory={(category) => {
+            setSearchQuery('')
+            setSelectedCategory(category)
+            setCurrentView('catalog')
+            window.setTimeout(() => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' }), 80)
+          }}
         />
       )}
 

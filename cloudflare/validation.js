@@ -53,7 +53,7 @@ export function validateResource(name, value) {
       if (variantIds.has(variantId)) fail('Hay variantes repetidas.')
       variantIds.add(variantId)
       if (variant.video !== undefined && parseVideoUrl(variant.video).type === 'blocked') fail('Los enlaces de TikTok no están permitidos.')
-      return { id: variantId, name: text(variant.name, 100, true), image: mediaUrl(variant.image || ''), price: variant.price === undefined || variant.price === '' ? undefined : Number(variant.price), isAvailable: variant.isAvailable !== false, isImmediateDelivery: variant.isAvailable !== false && variant.isImmediateDelivery === true }
+      return { id: variantId, name: text(variant.name, 100, true), image: mediaUrl(variant.image || ''), price: variant.price === undefined || variant.price === '' ? undefined : Number(variant.price), isAvailable: variant.isAvailable !== false, isImmediateDelivery: variant.isAvailable !== false && variant.isImmediateDelivery === true, isLastUnit: variant.isAvailable !== false && variant.isLastUnit === true }
     })
     if (safeVariants.some(v => v.price !== undefined && (!Number.isSafeInteger(v.price) || v.price < 0))) fail('Precio de variante inválido.')
     const images = item.images === undefined ? [] : item.images
@@ -64,7 +64,7 @@ export function validateResource(name, value) {
     return {
       id, reference:text(item.reference,80,true), name:text(item.name,200,true), price:item.price,
       category:safeCategories[0], categories:safeCategories, description:text(item.description || '',4000), badge:text(item.badge || '',100),
-      isAvailable:item.isAvailable !== false, isImmediateDelivery:item.isAvailable !== false && item.isImmediateDelivery === true, isVisible:item.isVisible !== false,
+      isAvailable:item.isAvailable !== false, isImmediateDelivery:item.isAvailable !== false && item.isImmediateDelivery === true, isLastUnit:item.isAvailable !== false && item.isLastUnit === true, isVisible:item.isVisible !== false,
       image:mediaUrl(item.image), images: images.map(image => mediaUrl(image, true)), video:mediaUrl(item.video), iconColor:text(item.iconColor || '',200),
       variants: safeVariants,
     }
