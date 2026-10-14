@@ -46,6 +46,7 @@ export function AdminModal({
   const [editingProduct, setEditingProduct] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('Todos')
+  const [categorySearch, setCategorySearch] = useState('')
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
 
   // Formulario de Producto
@@ -142,12 +143,14 @@ export function AdminModal({
       reference: suggestedRef,
     })
     setEditingProduct(null)
+    setCategorySearch('')
     setIsFormOpen(true)
   }
 
   const openEditProductForm = (product) => {
     setFormData({ ...product, categories: product.categories?.length ? product.categories : [product.category], variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
     setEditingProduct(product.id)
+    setCategorySearch('')
     setIsFormOpen(true)
   }
 
@@ -583,11 +586,14 @@ export function AdminModal({
 
                         <div>
                           <label className="text-xs font-bold text-gray-700 block mb-1">Categorías</label>
-                          <div className="max-h-24 overflow-y-auto rounded-xl border border-pink-200 bg-white p-2 space-y-1">
-                            {categoriesList.filter((c) => c !== 'Todos').map((cat) => {
+                          <div className="rounded-xl border border-pink-200 bg-white p-2 space-y-2">
+                            <input value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="Buscar categoría…" className="w-full px-2.5 py-2 text-xs border border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200" />
+                            <div className="max-h-24 overflow-y-auto space-y-1">
+                            {categoriesList.filter(c => c !== 'Todos' && c.toLowerCase().includes(categorySearch.toLowerCase())).map((cat) => {
                               const checked = (formData.categories || []).includes(cat)
                               return <label key={cat} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" checked={checked} onChange={() => setFormData(prev => { const categories = checked ? prev.categories.filter(item => item !== cat) : [...(prev.categories || []), cat]; return { ...prev, categories, category: categories[0] || prev.category } })} /><span>{cat}</span></label>
                             })}
+                            </div>
                           </div>
                           <p className="text-[10px] text-gray-500 mt-1">Elige una o varias categorías.</p>
                         </div>
