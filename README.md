@@ -76,4 +76,3 @@ npm run lint
 
 ---
 
-Desarrollado por **Carol Velasco** como proyecto personal de Ingeniería de Sistemas.
