@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+server/data/
+
+.wrangler/
+.dev.vars
+.dev.vars.*
+artifacts/
+.admin-credentials.txt
+
+.cloudinary.env

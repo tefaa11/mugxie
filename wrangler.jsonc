@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mugxie",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "mugxie.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.mugxie.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/admin",
+      "/admin/"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mugxie-catalogo",
+      "database_id": "9c88351c-a030-4b9d-88ed-00f0ae12402e",
+      "migrations_dir": "cloudflare/migrations"
+    }
+  ],
+  "dev": {
+    "port": 3001
+  }
+}

@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-pink: #c84e97;
+    --brand-pink-dark: #a93c7e;
+    --brand-pink-light: #f4aaa9;
+    --brand-yellow: #ffde59;
+    --brand-blue: #5fd6ff;
+    --brand-mint: #8ceda7;
+    --brand-dark: #2e2a36;
+  }
+
+  * {
+    border-color: #fce4f0;
+  }
+
+  body {
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #fff8fa;
+    color: #382e3f;
+    font-size: 16.5px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Fredoka', cursive, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Scrollbar kawaii */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: #fff0f6;
+}
+::-webkit-scrollbar-thumb {
+  background: #c84e97;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a93c7e;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes mango-sway {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-9px) rotate(1.5deg); }
+}
+
+@keyframes aura-drift {
+  0%, 100% { transform: scale(0.96) rotate(0deg); opacity: 0.62; }
+  50% { transform: scale(1.1) rotate(10deg); opacity: 0.9; }
+}
+
+.animate-float {
+  animation: float-slow 3.5s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-mango { animation: mango-sway 3.8s ease-in-out infinite; transform-origin: center bottom; }
+.animate-aura { animation: aura-drift 5s ease-in-out infinite; }
+
+@keyframes message-arrive-left {
+  0% { opacity: 0; transform: translateX(-90px) scale(0.88); }
+  65% { opacity: 1; transform: translateX(7px) scale(1.025); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes message-arrive-right {
+  0% { opacity: 0; transform: translateX(90px) scale(0.88); }
+  65% { opacity: 1; transform: translateX(-7px) scale(1.025); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.message-arrive-left { opacity: 1; animation: message-arrive-left 1100ms cubic-bezier(.2,.8,.2,1) both; }
+.message-arrive-right { opacity: 1; animation: message-arrive-right 1100ms cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes sparkle-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(.85); opacity: .28; }
+  50% { transform: translateY(-15px) rotate(18deg) scale(1.12); opacity: .7; }
+}
+.sparkle-drift { animation: sparkle-drift 5.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-mango, .animate-aura, .message-arrive-left, .message-arrive-right, .sparkle-drift { animation: none; opacity: 1; }
+}
