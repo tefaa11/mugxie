@@ -89,7 +89,7 @@ export default function App() {
     const admin = /^\/admin\/?$/.test(window.location.pathname)
     document.title = admin ? 'Mugxie Admin' : 'Mugxie'
     const favicon = document.querySelector("link[rel='icon']")
-    if (favicon) favicon.setAttribute('href', admin ? '/icono2.png' : '/icono.png')
+    if (favicon) favicon.setAttribute('href', admin ? '/icono2.png?v=20261014' : '/icono.png?v=20261014')
   }, [])
   const persist = async (name, updated, setter) => {
     if (!databaseReady) throw new Error('La base de datos no está conectada.')
