@@ -165,11 +165,13 @@ export default function App() {
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.categories || []).some(category => category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.variants || []).some(variant => variant.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
 
       // Categoría
       const matchesCat =
-        selectedCategory === 'Todos' || p.category === selectedCategory
+        selectedCategory === 'Todos' || (p.categories?.length ? p.categories : [p.category]).includes(selectedCategory)
 
       // Favoritos
       const matchesFav = !showOnlyFavorites || favorites.includes(p.id)
@@ -207,7 +209,7 @@ export default function App() {
         fullPage
         onClose={() => { logout().finally(() => window.location.assign('/')) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.map(p => p.category)]))}
+        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => p.categories?.length ? p.categories : [p.category])]))}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}
@@ -223,6 +225,7 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q)
+            if (q.trim()) setSelectedCategory('Todos')
           if (currentView !== 'catalog') setCurrentView('catalog')
         }}
         onOpenAdmin={() => setIsAdminOpen(true)}
@@ -278,7 +281,7 @@ export default function App() {
             </div>
             {/* Barra de Filtros por Categoría */}
             <div className="relative mb-8">
-              <div ref={categoryStripRef} onScroll={(event) => setHasMoreCategories(event.currentTarget.scrollLeft + event.currentTarget.clientWidth < event.currentTarget.scrollWidth - 12)} className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 pl-1 scrollbar-none pr-20">
+              <div ref={categoryStripRef} onScroll={(event) => setHasMoreCategories(event.currentTarget.scrollLeft + event.currentTarget.clientWidth < event.currentTarget.scrollWidth - 12)} className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 pl-1 scrollbar-none pr-24">
               {categoriesList.map((cat) => {
                 const isSelected = selectedCategory === cat
                 return (
@@ -300,7 +303,7 @@ export default function App() {
                 )
               })}
               </div>
-              {hasMoreCategories && <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-14 bg-gradient-to-l from-[#FFF8FA] to-transparent flex items-center justify-end"><span className="w-7 h-7 rounded-full bg-white border border-pink-200 shadow-sm text-[#C84E97] flex items-center justify-center font-bold">›</span></div>}
+              {hasMoreCategories && <button type="button" onClick={() => categoryStripRef.current?.scrollBy({ left: Math.max(220, categoryStripRef.current.clientWidth * 0.7), behavior: 'smooth' })} aria-label="Ver más categorías" title="Ver más categorías" className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#FFF8FA] via-[#FFF8FA] to-transparent flex items-center justify-end"><span className="w-8 h-8 rounded-full bg-white border border-pink-200 shadow-md text-[#C84E97] flex items-center justify-center font-bold hover:bg-pink-50 transition-colors">›</span></button>}
             </div>
 
             {/* Si está activo el filtro de favoritos */}
@@ -420,7 +423,7 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => { logout().finally(() => { setIsAdminOpen(false); window.location.assign('/') }) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.map(p => p.category)]))}
+        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => p.categories?.length ? p.categories : [p.category])]))}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}

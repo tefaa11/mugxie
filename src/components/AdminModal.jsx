@@ -55,6 +55,7 @@ export function AdminModal({
     name: '',
     price: 55000,
     category: categoriesList.find(c => c !== 'Todos') || 'Colección Kawaii',
+    categories: [categoriesList.find(c => c !== 'Todos') || 'Colección Kawaii'],
     description: '',
     badge: '',
     isAvailable: true,
@@ -144,7 +145,7 @@ export function AdminModal({
   }
 
   const openEditProductForm = (product) => {
-    setFormData({ ...product })
+    setFormData({ ...product, categories: product.categories?.length ? product.categories : [product.category], variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
     setEditingProduct(product.id)
     setIsFormOpen(true)
   }
@@ -160,6 +161,8 @@ export function AdminModal({
     if (isUploadingMedia) return
     const finalizedData = {
       ...formData,
+      categories: (formData.categories || [formData.category]).filter(Boolean),
+      category: (formData.categories || [formData.category]).filter(Boolean)[0] || formData.category,
       isImmediateDelivery: formData.isAvailable && formData.isImmediateDelivery,
       reference: formData.reference?.trim() || `MG-${Date.now().toString().slice(-3)}`,
     }
@@ -240,9 +243,12 @@ export function AdminModal({
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.categories || []).some(category => category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.variants || []).some(variant => variant.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    const productCategories = p.categories?.length ? p.categories : [p.category]
     const matchesCat = filterCategory === 'Todos' ||
-      (filterCategory === '__agotados__' ? p.isAvailable === false : p.category === filterCategory)
+      (filterCategory === '__agotados__' ? p.isAvailable === false : productCategories.includes(filterCategory))
     return matchesSearch && matchesCat
   })
 
@@ -375,7 +381,7 @@ export function AdminModal({
 
             {/* CUERPO DE LA PESTAÑA */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              {activeTab === 'content' && <ContentManager categories={categoriesList} onSaveCategories={onSaveCategories} testimonials={testimonials} onSaveTestimonials={onSaveTestimonials} />}
+              {activeTab === 'content' && <ContentManager categories={categoriesList} onSaveCategories={onSaveCategories} testimonials={testimonials} onSaveTestimonials={onSaveTestimonials} products={products} onSaveProducts={onSaveProducts} />}
               {/* TAB 1: PRODUCTOS */}
               {activeTab === 'products' && (
                 <div className="space-y-4">
@@ -574,20 +580,14 @@ export function AdminModal({
                         </div>
 
                         <div>
-                          <label className="text-xs font-bold text-gray-700 block mb-1">
-                            Categoría
-                          </label>
-                          <select
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 text-gray-700 font-medium"
-                          >
-                            {categoriesList.filter((c) => c !== 'Todos').map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                          </select>
+                          <label className="text-xs font-bold text-gray-700 block mb-1">Categorías</label>
+                          <div className="max-h-24 overflow-y-auto rounded-xl border border-pink-200 bg-white p-2 space-y-1">
+                            {categoriesList.filter((c) => c !== 'Todos').map((cat) => {
+                              const checked = (formData.categories || []).includes(cat)
+                              return <label key={cat} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" checked={checked} onChange={() => setFormData(prev => { const categories = checked ? prev.categories.filter(item => item !== cat) : [...(prev.categories || []), cat]; return { ...prev, categories, category: categories[0] || prev.category } })} /><span>{cat}</span></label>
+                            })}
+                          </div>
+                          <p className="text-[10px] text-gray-500 mt-1">Elige una o varias categorías.</p>
                         </div>
 
                         <div>
@@ -734,12 +734,12 @@ export function AdminModal({
                       <div className="bg-white p-4 rounded-2xl border border-pink-200 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                           <div><h4 className="text-sm font-bold text-gray-800">Variantes: color o diseño</h4><p className="text-[11px] text-gray-500">Agrupa, por ejemplo, Mickey, Minnie y sus amigos en la misma publicación.</p></div>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: [...(prev.variants || []), { id: `var-${Date.now()}`, name: '', image: '', price: '', isAvailable: true }] }))} className="px-3 py-2 rounded-xl bg-pink-100 text-[#C84E97] text-xs font-bold">+ Añadir opción</button>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: [...(prev.variants || []), { id: `var-${Date.now()}`, name: '', image: '', price: '', isAvailable: true, isImmediateDelivery: false }] }))} className="px-3 py-2 rounded-xl bg-pink-100 text-[#C84E97] text-xs font-bold">+ Añadir opción</button>
                         </div>
                         {(formData.variants || []).map((variant, index) => <div key={variant.id} className="grid grid-cols-1 sm:grid-cols-[1fr_130px_1fr_auto] gap-2 items-center bg-pink-50/50 p-3 rounded-xl">
                           <input required placeholder="Ej. Minnie rosada" value={variant.name} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, name: e.target.value } : v) }))} className="px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" />
                           <input type="number" step="1000" min="0" placeholder="Precio opcional" value={variant.price} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, price: e.target.value === '' ? '' : Number(e.target.value) } : v) }))} className="px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" />
-                          <div className="flex gap-1"><input placeholder="URL foto opcional" value={variant.image || ''} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, image: e.target.value } : v) }))} className="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" /><label className="cursor-pointer px-2 py-2 rounded-lg bg-pink-100 text-[#C84E97] text-xs font-bold">Foto<input type="file" accept="image/*" onChange={e => handleVariantImageUpload(e, index)} className="hidden" /></label></div>
+                          <div className="space-y-2"><div className="flex gap-1"><input placeholder="URL foto opcional" value={variant.image || ''} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, image: e.target.value } : v) }))} className="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-pink-200 rounded-lg" /><label className="cursor-pointer px-2 py-2 rounded-lg bg-pink-100 text-[#C84E97] text-xs font-bold">Foto<input type="file" accept="image/*" onChange={e => handleVariantImageUpload(e, index)} className="hidden" /></label></div><label className="flex items-center gap-1.5 text-[11px] font-bold text-[#2c5315] cursor-pointer"><input type="checkbox" checked={variant.isImmediateDelivery === true} onChange={e => setFormData(prev => ({ ...prev, variants: prev.variants.map((v, i) => i === index ? { ...v, isImmediateDelivery: e.target.checked } : v) }))} />Entrega inmediata</label></div>
                           <button type="button" onClick={() => setFormData(prev => ({ ...prev, variants: prev.variants.filter((_, i) => i !== index) }))} className="text-rose-600 text-xs font-bold px-2">Quitar</button>
                         </div>)}
                       </div>
