@@ -51,6 +51,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todos')
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
+  const [showImmediateDelivery, setShowImmediateDelivery] = useState(false)
+  const [showLastUnits, setShowLastUnits] = useState(false)
   const [hasMoreCategories, setHasMoreCategories] = useState(false)
   const categoryStripRef = useRef(null)
 
@@ -176,11 +178,17 @@ export default function App() {
       // Favoritos
       const matchesFav = !showOnlyFavorites || favorites.includes(p.id)
 
-      return matchesSearch && matchesCat && matchesFav
-    }).sort((a, b) => priceOrder === 'asc' ? a.price - b.price : priceOrder === 'desc' ? b.price - a.price : priceOrder === 'az' ? a.name.localeCompare(b.name, 'es') : priceOrder === 'za' ? b.name.localeCompare(a.name, 'es') : 0)
-  }, [products, searchQuery, selectedCategory, showOnlyFavorites, favorites, priceOrder])
+      // Estado de disponibilidad: también revisa cada estilo del mismo mug.
+      const matchesImmediate = !showImmediateDelivery || p.isImmediateDelivery ||
+        (p.variants || []).some(variant => variant.isAvailable !== false && variant.isImmediateDelivery)
+      const matchesLastUnit = !showLastUnits || p.isLastUnit ||
+        (p.variants || []).some(variant => variant.isAvailable !== false && variant.isLastUnit)
 
-  useEffect(() => setCatalogPage(1), [searchQuery, selectedCategory, showOnlyFavorites, priceOrder])
+      return matchesSearch && matchesCat && matchesFav && matchesImmediate && matchesLastUnit
+    }).sort((a, b) => priceOrder === 'asc' ? a.price - b.price : priceOrder === 'desc' ? b.price - a.price : priceOrder === 'az' ? a.name.localeCompare(b.name, 'es') : priceOrder === 'za' ? b.name.localeCompare(a.name, 'es') : 0)
+  }, [products, searchQuery, selectedCategory, showOnlyFavorites, showImmediateDelivery, showLastUnits, favorites, priceOrder])
+
+  useEffect(() => setCatalogPage(1), [searchQuery, selectedCategory, showOnlyFavorites, showImmediateDelivery, showLastUnits, priceOrder])
   useEffect(() => {
     const strip = categoryStripRef.current
     if (!strip) return
@@ -278,6 +286,11 @@ export default function App() {
                 <option value="default">Orden del catálogo</option><option value="asc">Menor a mayor precio</option><option value="desc">Mayor a menor precio</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option>
               </select>
               <button type="button" onClick={() => setShowOnlyFavorites(prev => !prev)} aria-label="Ver favoritos" title="Ver Mugs favoritos" className={`relative h-11 min-w-11 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 ${showOnlyFavorites ? 'bg-[#C84E97] text-white border-[#C84E97] shadow-md shadow-pink-200' : 'bg-white text-[#C84E97] border-pink-200 hover:bg-pink-50'}`}><Heart size={19} fill={showOnlyFavorites ? 'currentColor' : 'none'} />{favorites.length > 0 && <span className="font-heading text-xs font-bold">{favorites.length}</span>}</button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <span className="text-xs font-bold text-gray-600 mr-1">Filtrar:</span>
+              <button type="button" onClick={() => setShowImmediateDelivery(prev => !prev)} aria-pressed={showImmediateDelivery} className={`min-h-10 px-3.5 rounded-xl border text-xs sm:text-sm font-heading font-bold transition-all ${showImmediateDelivery ? 'bg-[#e5ffd3] text-[#285417] border-[#8dcc69] shadow-sm' : 'bg-white text-gray-700 border-pink-200 hover:bg-[#e5ffd3]/50'}`}>⚡ Entrega inmediata</button>
+              <button type="button" onClick={() => setShowLastUnits(prev => !prev)} aria-pressed={showLastUnits} className={`min-h-10 px-3.5 rounded-xl border text-xs sm:text-sm font-heading font-bold transition-all ${showLastUnits ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-white text-gray-700 border-pink-200 hover:bg-rose-50'}`}>🔥 Última unidad</button>
             </div>
             {/* Barra de Filtros por Categoría */}
             <div className="relative mb-8">
