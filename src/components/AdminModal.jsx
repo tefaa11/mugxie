@@ -18,6 +18,7 @@ import {
   Video,
   Loader2,
   MessageSquareQuote,
+  Search,
 } from 'lucide-react'
 import { formatCOP } from '../utils/whatsapp'
 import { ContentManager } from './ContentManager'
@@ -585,9 +586,9 @@ export function AdminModal({
                         </div>
 
                         <div>
-                          <label className="text-xs font-bold text-gray-700 block mb-1">Categorías</label>
+                          <label className="text-xs font-bold text-gray-700 block mb-1">Categorías: busca y marca una o varias</label>
                           <div className="rounded-xl border border-pink-200 bg-white p-2 space-y-2">
-                            <input value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="Buscar categoría…" className="w-full px-2.5 py-2 text-xs border border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200" />
+                            <div className="relative"><Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C84E97] pointer-events-none" /><input type="search" value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="Buscar categoría aquí…" className="w-full pl-8 pr-2.5 py-2.5 text-xs bg-pink-50 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-[#C84E97]" /></div>
                             <div className="max-h-24 overflow-y-auto space-y-1">
                             {categoriesList.filter(c => c !== 'Todos' && c.toLowerCase().includes(categorySearch.toLowerCase())).map((cat) => {
                               const checked = (formData.categories || []).includes(cat)
