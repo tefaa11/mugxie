@@ -99,6 +99,14 @@ export function ProductDetailModal({
     setTimeout(() => setAddedAnimation(false), 2000)
   }
 
+  const handleAddAllStyles = () => {
+    const availableVariants = (product.variants || []).filter(variant => variant.isAvailable !== false)
+    if (!availableVariants.length) return
+    availableVariants.forEach(variant => onAddToCart({ ...product, ...variant, name: `${product.name} · ${variant.name}`, variantId: variant.id, image: variant.image || product.image, quantity: 1 }))
+    setAddedAnimation(true)
+    setTimeout(() => setAddedAnimation(false), 2000)
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5">
       <div className="relative bg-white rounded-3xl w-full max-w-3xl h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-2.5rem)] overflow-hidden shadow-2xl border-2 border-pink-200 animate-in fade-in zoom-in-95 duration-200">
@@ -261,6 +269,7 @@ export function ProductDetailModal({
               {(product.variants || []).length > 0 && <div className="pt-1">
                 <p className="text-xs font-bold text-gray-700 mb-2">Elige color o diseño:</p>
                 <div className="flex flex-wrap gap-2">{product.variants.map(variant => <button key={variant.id} type="button" onClick={() => setSelectedVariantId(variant.id)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${selectedVariantId === variant.id ? 'bg-[#C84E97] border-[#C84E97] text-white' : 'bg-white border-pink-200 text-gray-700'}`}>{variant.name}</button>)}</div>
+                {(product.variants || []).filter(variant => variant.isAvailable !== false).length > 1 && <button type="button" onClick={handleAddAllStyles} className="mt-3 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#fff0f7] text-[#C84E97] border border-pink-200 hover:bg-pink-100 text-xs font-heading font-extrabold transition-colors"><ShoppingCart size={15} />Pedir todos los estilos</button>}
               </div>}
 
               <div className="text-3xl font-extrabold text-gray-900 font-heading">

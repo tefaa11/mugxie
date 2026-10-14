@@ -105,7 +105,7 @@ export default function App() {
       const existing = prev.find((item) => (item.variantId ? `${item.id}:${item.variantId}` : item.id) === cartId)
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          (item.variantId ? `${item.id}:${item.variantId}` : item.id) === cartId
             ? { ...item, quantity: item.quantity + qtyToAdd }
             : item
         )
