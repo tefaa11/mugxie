@@ -1,6 +1,6 @@
 # Mugxie
 
-Tienda virtual colombiana de Mugs coleccionables. Es un proyecto personal desarrollado como aplicación full-stack: catálogo público, carrito, pedidos por WhatsApp y panel privado de administración.
+Tienda virtual de Mugs coleccionables. Es un proyecto personal desarrollado como aplicación full-stack: catálogo público, carrito, pedidos por WhatsApp y panel privado de administración.
 
 ## Enlaces
 
