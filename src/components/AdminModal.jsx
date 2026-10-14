@@ -55,7 +55,7 @@ export function AdminModal({
     id: '',
     reference: '',
     name: '',
-    price: 55000,
+    price: '',
     category: '',
     categories: [],
     description: '',
@@ -580,7 +580,7 @@ export function AdminModal({
                             placeholder="70000"
                             value={formData.price}
                             onChange={(e) =>
-                              setFormData({ ...formData, price: Number(e.target.value) })
+                              setFormData({ ...formData, price: e.target.value === '' ? '' : Number(e.target.value) })
                             }
                             className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 font-bold"
                           />
