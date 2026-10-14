@@ -1,4 +1,4 @@
-# Mugxie ☕
+# Mugxie
 
 Tienda virtual colombiana de Mugs coleccionables. Es un proyecto personal desarrollado como aplicación full-stack: catálogo público, carrito, pedidos por WhatsApp y panel privado de administración.
 
@@ -48,19 +48,9 @@ npm run cf:dev
 
 Abre `http://localhost:3001`. Para el frontend sin Worker se puede usar `npm run dev`.
 
-## Variables y secretos
+## Configuración local
 
-Nunca subas `.env`, `.dev.vars`, `.cloudinary.env` ni `.admin-credentials.txt`. Ya están incluidos en `.gitignore`.
-
-Ejemplo para desarrollo local:
-
-```env
-ADMIN_PASSWORD=usa-una-clave-larga-y-unica
-APP_ORIGIN=http://localhost:5173
-PORT=3001
-```
-
-Las credenciales de Cloudinary y la contraseña de administrador de producción se guardan como secretos de Cloudflare, no en GitHub.
+Las claves para Cloudinary y la contraseña del administrador se configuran localmente y en Cloudflare. Los archivos con esa información ya están excluidos del repositorio mediante `.gitignore`.
 
 ## Publicación
 
@@ -80,9 +70,9 @@ npm run lint
 
 ## Próximas mejoras
 
-- Integración de pagos en línea.
-- Métricas de ventas y productos más consultados.
-- Confirmaciones de pedido y seguimiento de envíos.
+- Ampliar el panel administrador para registrar ventas, gastos, ganancias y reinversiones.
+- Mostrar resúmenes y métricas del negocio desde el mismo panel.
+- Mejorar el seguimiento de pedidos y entregas.
 
 ---
 
