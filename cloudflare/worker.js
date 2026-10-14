@@ -63,7 +63,14 @@ export default {
     try {
       const url=new URL(request.url), path=url.pathname, method=request.method
       if(!path.startsWith('/api/')) {
-        if(path==='/admin'||path==='/admin/')return env.ASSETS.fetch(new Request(new URL('/',url),request))
+        if(path==='/admin'||path==='/admin/') {
+          // El panel cambia con frecuencia. Evitamos que el navegador reutilice
+          // una versión anterior de la página y oculte ajustes recién publicados.
+          const response=await env.ASSETS.fetch(new Request(new URL('/',url),request))
+          const headers=new Headers(response.headers)
+          headers.set('Cache-Control','no-store, max-age=0')
+          return new Response(response.body,{status:response.status,statusText:response.statusText,headers})
+        }
         return env.ASSETS.fetch(request)
       }
       if(!env.DB)throw new HttpError(503,'La tienda está pendiente de configurar.')
