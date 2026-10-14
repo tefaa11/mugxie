@@ -58,12 +58,12 @@ export function validateResource(name, value) {
     if (safeVariants.some(v => v.price !== undefined && (!Number.isSafeInteger(v.price) || v.price < 0))) fail('Precio de variante inválido.')
     const images = item.images === undefined ? [] : item.images
     if (!Array.isArray(images) || images.length > 12) fail('Las fotos adicionales son inválidas.')
-    const categories = item.categories === undefined ? [text(item.category,80,true)] : item.categories
-    if (!Array.isArray(categories) || categories.length < 1 || categories.length > 8) fail('Las categorías del producto son inválidas.')
-    const safeCategories = [...new Set(categories.map(category => text(category, 80, true)))]
+    const categories = item.categories === undefined ? [item.category || ''] : item.categories
+    if (!Array.isArray(categories) || categories.length > 8) fail('Las categorías del producto son inválidas.')
+    const safeCategories = [...new Set(categories.map(category => text(category, 80)).filter(Boolean))]
     return {
       id, reference:text(item.reference,80,true), name:text(item.name,200,true), price:item.price,
-      category:safeCategories[0], categories:safeCategories, description:text(item.description || '',4000), badge:text(item.badge || '',100),
+      category:safeCategories[0] || '', categories:safeCategories, description:text(item.description || '',4000), badge:text(item.badge || '',100),
       isAvailable:item.isAvailable !== false, isImmediateDelivery:item.isAvailable !== false && item.isImmediateDelivery === true, isLastUnit:item.isAvailable !== false && item.isLastUnit === true, isVisible:item.isVisible !== false,
       image:mediaUrl(item.image), images: images.map(image => mediaUrl(image, true)), video:mediaUrl(item.video), iconColor:text(item.iconColor || '',200),
       variants: safeVariants,

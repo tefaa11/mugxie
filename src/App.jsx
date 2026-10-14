@@ -209,7 +209,7 @@ export default function App() {
         fullPage
         onClose={() => { logout().finally(() => window.location.assign('/')) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => p.categories?.length ? p.categories : [p.category])]))}
+        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => (p.categories?.length ? p.categories : [p.category]).filter(Boolean))]))}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}
@@ -429,7 +429,7 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => { logout().finally(() => { setIsAdminOpen(false); window.location.assign('/') }) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => p.categories?.length ? p.categories : [p.category])]))}
+        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => (p.categories?.length ? p.categories : [p.category]).filter(Boolean))]))}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}

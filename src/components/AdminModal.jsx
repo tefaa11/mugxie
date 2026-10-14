@@ -56,8 +56,8 @@ export function AdminModal({
     reference: '',
     name: '',
     price: 55000,
-    category: categoriesList.find(c => c !== 'Todos') || 'Colección Kawaii',
-    categories: [categoriesList.find(c => c !== 'Todos') || 'Colección Kawaii'],
+    category: '',
+    categories: [],
     description: '',
     badge: '',
     isAvailable: true,
@@ -149,7 +149,7 @@ export function AdminModal({
   }
 
   const openEditProductForm = (product) => {
-    setFormData({ ...product, categories: product.categories?.length ? product.categories : [product.category], variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
+    setFormData({ ...product, categories: product.categories?.length ? product.categories.filter(Boolean) : [product.category].filter(Boolean), variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
     setEditingProduct(product.id)
     setCategorySearch('')
     setIsFormOpen(true)
@@ -164,10 +164,11 @@ export function AdminModal({
 
     if (parseVideoUrl(formData.video).type === 'blocked') { alert('TikTok no está permitido. Quita el enlace y sube un MP4, YouTube o Google Drive.'); return }
     if (isUploadingMedia) return
+    const selectedCategories = (formData.categories || [formData.category]).filter(Boolean)
     const finalizedData = {
       ...formData,
-      categories: (formData.categories || [formData.category]).filter(Boolean),
-      category: (formData.categories || [formData.category]).filter(Boolean)[0] || formData.category,
+      categories: selectedCategories,
+      category: selectedCategories[0] || '',
       isImmediateDelivery: formData.isAvailable && formData.isImmediateDelivery,
       isLastUnit: formData.isAvailable && formData.isLastUnit,
       reference: formData.reference?.trim() || `MG-${Date.now().toString().slice(-3)}`,
@@ -586,7 +587,7 @@ export function AdminModal({
                         </div>
 
                         <div>
-                          <label className="text-xs font-bold text-gray-700 block mb-1">Categorías: busca y marca una o varias</label>
+                          <label className="text-xs font-bold text-gray-700 block mb-1">Categorías (opcional): busca y marca una o varias</label>
                           <div className="rounded-xl border border-pink-200 bg-white p-2 space-y-2">
                             <div className="relative"><Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C84E97] pointer-events-none" /><input type="search" value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="Buscar categoría aquí…" className="w-full pl-8 pr-2.5 py-2.5 text-xs bg-pink-50 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-[#C84E97]" /></div>
                             <div className="max-h-24 overflow-y-auto space-y-1">
@@ -596,7 +597,7 @@ export function AdminModal({
                             })}
                             </div>
                           </div>
-                          <p className="text-[10px] text-gray-500 mt-1">Elige una o varias categorías.</p>
+                            <p className="text-[10px] text-gray-500 mt-1">Puedes elegir varias o dejar este mug sin categoría.</p>
                         </div>
 
                         <div>
