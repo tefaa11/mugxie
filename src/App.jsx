@@ -16,6 +16,7 @@ import { Sparkles, Heart, Search, Filter, ShoppingBag, ArrowLeft } from 'lucide-
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { SparkleField } from './components/SparkleField'
 import { formatCOP, generateWhatsAppOrder } from './utils/whatsapp'
+import { matchesSearch as textMatches } from './utils/search'
 
 export default function App() {
   // Estados de datos
@@ -54,6 +55,7 @@ export default function App() {
   const [showImmediateDelivery, setShowImmediateDelivery] = useState(false)
   const [showLastUnits, setShowLastUnits] = useState(false)
   const [hasMoreCategories, setHasMoreCategories] = useState(false)
+  const [hasPreviousCategories, setHasPreviousCategories] = useState(false)
   const categoryStripRef = useRef(null)
 
   // Modales
@@ -103,34 +105,36 @@ export default function App() {
   const handleAddToCart = (product) => {
     setCartItems((prev) => {
       const qtyToAdd = product.quantity || 1
-      const cartId = product.variantId ? `${product.id}:${product.variantId}` : product.id
-      const existing = prev.find((item) => (item.variantId ? `${item.id}:${item.variantId}` : item.id) === cartId)
+      const baseId = product.variantId ? `${product.id}:${product.variantId}` : product.id
+      const cartId = product.cartId || `${baseId}:${product.purchaseType === 'couple' ? 'couple' : 'single'}`
+      const itemCartId = item => item.cartId || `${item.variantId ? `${item.id}:${item.variantId}` : item.id}:${item.purchaseType === 'couple' ? 'couple' : 'single'}`
+      const existing = prev.find(item => itemCartId(item) === cartId)
       if (existing) {
         return prev.map((item) =>
-          (item.variantId ? `${item.id}:${item.variantId}` : item.id) === cartId
+          itemCartId(item) === cartId
             ? { ...item, quantity: item.quantity + qtyToAdd }
             : item
         )
       }
-      return [...prev, { ...product, quantity: qtyToAdd }]
+      return [...prev, { ...product, cartId, quantity: qtyToAdd }]
     })
     setIsCartOpen(true)
   }
 
-  const handleUpdateQuantity = (productId, newQuantity) => {
+  const handleUpdateQuantity = (cartId, newQuantity) => {
     if (newQuantity <= 0) {
-      handleRemoveItem(productId)
+      handleRemoveItem(cartId)
       return
     }
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
+        (item.cartId || item.id) === cartId ? { ...item, quantity: newQuantity } : item
       )
     )
   }
 
-  const handleRemoveItem = (productId) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== productId))
+  const handleRemoveItem = (cartId) => {
+    setCartItems((prev) => prev.filter((item) => (item.cartId || item.id) !== cartId))
   }
 
   const handleClearCart = () => {
@@ -163,17 +167,20 @@ export default function App() {
       if (p.isVisible === false || p.isAvailable === false) return false
 
       // Búsqueda por texto (nombre, categoría o referencia)
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.categories || []).some(category => category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.variants || []).some(variant => variant.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      const matchesText =
+        textMatches(p.name, searchQuery) ||
+        textMatches(p.reference, searchQuery) ||
+        textMatches(p.category, searchQuery) ||
+        (p.categories || []).some(category => textMatches(category, searchQuery)) ||
+        (p.variants || []).some(variant => textMatches(variant.name, searchQuery)) ||
+        textMatches(p.description, searchQuery)
 
       // Categoría
-      const matchesCat =
-        selectedCategory === 'Todos' || (p.categories?.length ? p.categories : [p.category]).includes(selectedCategory)
+      const productCategories = p.categories?.length ? p.categories : [p.category]
+      const matchesCat = selectedCategory === 'Todos' ||
+        (selectedCategory === 'Parejas'
+          ? p.isCouplePromotion === true || productCategories.includes('Parejas')
+          : productCategories.includes(selectedCategory))
 
       // Favoritos
       const matchesFav = !showOnlyFavorites || favorites.includes(p.id)
@@ -184,23 +191,68 @@ export default function App() {
       const matchesLastUnit = !showLastUnits || p.isLastUnit ||
         (p.variants || []).some(variant => variant.isAvailable !== false && variant.isLastUnit)
 
-      return matchesSearch && matchesCat && matchesFav && matchesImmediate && matchesLastUnit
-    }).sort((a, b) => priceOrder === 'asc' ? a.price - b.price : priceOrder === 'desc' ? b.price - a.price : priceOrder === 'az' ? a.name.localeCompare(b.name, 'es') : priceOrder === 'za' ? b.name.localeCompare(a.name, 'es') : 0)
+      return matchesText && matchesCat && matchesFav && matchesImmediate && matchesLastUnit
+    }).flatMap(p => {
+      const matchedVariants = searchQuery.trim()
+        ? (p.variants || []).filter(variant => textMatches(variant.name, searchQuery))
+        : []
+      // Solo fijamos la foto si la búsqueda identifica un único estilo.
+      // Si coincide con varios (por ejemplo, “dragon”), conservamos una sola
+      // publicación general y su galería seguirá mostrando los diseños.
+      return matchedVariants.length === 1
+        ? [{ ...p, searchMatchedVariant: matchedVariants[0] }]
+        : [p]
+    }).sort((a, b) => {
+      if (priceOrder === 'asc') return a.price - b.price
+      if (priceOrder === 'desc') return b.price - a.price
+      if (priceOrder === 'az') return a.name.localeCompare(b.name, 'es')
+      if (priceOrder === 'za') return b.name.localeCompare(a.name, 'es')
+      if (priceOrder === 'capacityAsc' || priceOrder === 'capacityDesc') {
+        const aCapacity = Number.isSafeInteger(a.capacityMl) ? a.capacityMl : null
+        const bCapacity = Number.isSafeInteger(b.capacityMl) ? b.capacityMl : null
+        if (aCapacity === null && bCapacity === null) return 0
+        if (aCapacity === null) return 1
+        if (bCapacity === null) return -1
+        return priceOrder === 'capacityAsc' ? aCapacity - bCapacity : bCapacity - aCapacity
+      }
+      const referenceNumber = reference => Number((String(reference || '').match(/\d+/g) || []).at(-1))
+      const aReference = referenceNumber(a.reference)
+      const bReference = referenceNumber(b.reference)
+      if (Number.isFinite(aReference) && Number.isFinite(bReference) && aReference !== bReference) return aReference - bReference
+      if (Number.isFinite(aReference)) return -1
+      if (Number.isFinite(bReference)) return 1
+      return String(a.reference || '').localeCompare(String(b.reference || ''), 'es', { numeric: true })
+    })
   }, [products, searchQuery, selectedCategory, showOnlyFavorites, showImmediateDelivery, showLastUnits, favorites, priceOrder])
+
+  const allCategories = useMemo(() => Array.from(new Set([
+    ...categoriesList,
+    'Parejas',
+    ...products.flatMap(p => (p.categories?.length ? p.categories : [p.category]).filter(Boolean)),
+  ])), [categoriesList, products])
+
+  const immediateReferences = useMemo(() => products.filter(product =>
+    product.isVisible !== false && product.isAvailable !== false && (
+      product.isImmediateDelivery ||
+      (product.variants || []).some(variant => variant.isAvailable !== false && variant.isImmediateDelivery)
+    )
+  ).length, [products])
 
   useEffect(() => setCatalogPage(1), [searchQuery, selectedCategory, showOnlyFavorites, showImmediateDelivery, showLastUnits, priceOrder])
   useEffect(() => {
     const strip = categoryStripRef.current
     if (!strip) return
-    const update = () => setHasMoreCategories(strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 12)
+    const update = () => {
+      setHasPreviousCategories(strip.scrollLeft > 12)
+      setHasMoreCategories(strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 12)
+    }
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
-  }, [categoriesList])
+  }, [allCategories])
   const productsPerPage = 24
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / productsPerPage))
   const visibleProducts = filteredProducts.slice((catalogPage - 1) * productsPerPage, catalogPage * productsPerPage)
-
   const totalCartCount = cartItems.reduce((acc, i) => acc + (i.quantity || 1), 0)
 
   const handleNavigate = (view) => {
@@ -217,7 +269,7 @@ export default function App() {
         fullPage
         onClose={() => { logout().finally(() => window.location.assign('/')) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => (p.categories?.length ? p.categories : [p.category]).filter(Boolean))]))}
+        categoriesList={allCategories}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}
@@ -233,7 +285,17 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q)
-            if (q.trim()) setSelectedCategory('Todos')
+          if (q.trim()) {
+            setSelectedCategory('Todos')
+            if (currentView !== 'catalog') setCurrentView('catalog')
+            window.setTimeout(() => {
+              const target = window.matchMedia('(max-width: 1023px)').matches
+                ? document.getElementById('resultados-catalogo')
+                : document.getElementById('catalogo')
+              target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 80)
+            return
+          }
           if (currentView !== 'catalog') setCurrentView('catalog')
         }}
         onOpenAdmin={() => setIsAdminOpen(true)}
@@ -251,6 +313,7 @@ export default function App() {
               document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' })
             }}
             storeConfig={storeConfig}
+            immediateReferences={immediateReferences}
             onFaqClick={() => {
               setCurrentView('about')
               window.setTimeout(() => document.getElementById('preguntas-frecuentes')?.scrollIntoView({ behavior: 'smooth' }), 80)
@@ -281,9 +344,9 @@ export default function App() {
             </div>
 
             <div className="flex flex-nowrap items-center gap-2 sm:gap-3 mb-5 text-sm font-bold">
-              <span className="shrink-0"><span className="hidden sm:inline">Ordenar por precio</span><span className="sm:hidden">Ordenar</span></span>
+              <span className="shrink-0"><span className="hidden sm:inline">Ordenar catálogo</span><span className="sm:hidden">Ordenar</span></span>
               <select value={priceOrder} onChange={e => setPriceOrder(e.target.value)} className="min-w-0 flex-1 sm:flex-none bg-white border border-pink-200 rounded-xl px-3 sm:px-4 py-3">
-                <option value="default">Orden del catálogo</option><option value="asc">Menor a mayor precio</option><option value="desc">Mayor a menor precio</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option>
+                <option value="default">Orden del catálogo</option><option value="asc">Menor a mayor precio</option><option value="desc">Mayor a menor precio</option><option value="capacityAsc">Menor a mayor capacidad</option><option value="capacityDesc">Mayor a menor capacidad</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option>
               </select>
               <button type="button" onClick={() => setShowOnlyFavorites(prev => !prev)} aria-label="Ver favoritos" title="Ver Mugs favoritos" className={`relative h-11 min-w-11 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 ${showOnlyFavorites ? 'bg-[#C84E97] text-white border-[#C84E97] shadow-md shadow-pink-200' : 'bg-white text-[#C84E97] border-pink-200 hover:bg-pink-50'}`}><Heart size={19} fill={showOnlyFavorites ? 'currentColor' : 'none'} />{favorites.length > 0 && <span className="font-heading text-xs font-bold">{favorites.length}</span>}</button>
             </div>
@@ -294,8 +357,8 @@ export default function App() {
             </div>
             {/* Barra de Filtros por Categoría */}
             <div className="relative mb-8">
-              <div ref={categoryStripRef} onScroll={(event) => setHasMoreCategories(event.currentTarget.scrollLeft + event.currentTarget.clientWidth < event.currentTarget.scrollWidth - 12)} className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 pl-1 scrollbar-none pr-24">
-              {categoriesList.map((cat) => {
+              <div ref={categoryStripRef} onScroll={(event) => { const strip = event.currentTarget; setHasPreviousCategories(strip.scrollLeft > 12); setHasMoreCategories(strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 12) }} className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 pl-1 pr-14 scrollbar-none">
+              {allCategories.map((cat) => {
                 const isSelected = selectedCategory === cat
                 return (
                   <button
@@ -303,7 +366,9 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setSelectedCategory(cat)
+                      setSearchQuery('')
                       if (showOnlyFavorites) setShowOnlyFavorites(false)
+                      window.setTimeout(() => document.getElementById('resultados-catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
                     }}
                     className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-heading font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-2xs ${
                       isSelected
@@ -316,6 +381,7 @@ export default function App() {
                 )
               })}
               </div>
+              {hasPreviousCategories && <button type="button" onClick={() => categoryStripRef.current?.scrollBy({ left: -Math.max(220, categoryStripRef.current.clientWidth * 0.7), behavior: 'smooth' })} aria-label="Ver categorías anteriores" title="Ver categorías anteriores" className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-[#FFF8FA] via-[#FFF8FA] to-transparent flex items-center justify-start"><span className="w-8 h-8 rounded-full bg-white border border-pink-200 shadow-md text-[#C84E97] flex items-center justify-center font-bold hover:bg-pink-50 transition-colors">‹</span></button>}
               {hasMoreCategories && <button type="button" onClick={() => categoryStripRef.current?.scrollBy({ left: Math.max(220, categoryStripRef.current.clientWidth * 0.7), behavior: 'smooth' })} aria-label="Ver más categorías" title="Ver más categorías" className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#FFF8FA] via-[#FFF8FA] to-transparent flex items-center justify-end"><span className="w-8 h-8 rounded-full bg-white border border-pink-200 shadow-md text-[#C84E97] flex items-center justify-center font-bold hover:bg-pink-50 transition-colors">›</span></button>}
             </div>
 
@@ -336,6 +402,7 @@ export default function App() {
             )}
 
             {/* Cuadrícula de Productos (2 por fila en celular) */}
+            <div id="resultados-catalogo" className="scroll-mt-20">
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                 {visibleProducts.map((product) => (
@@ -373,6 +440,7 @@ export default function App() {
                 </button>
               </div>
             )}
+            </div>
             {filteredProducts.length > productsPerPage && <nav aria-label="Páginas del catálogo" className="mt-10 flex flex-wrap items-center justify-center gap-2">
               {Array.from({ length: pageCount }, (_, index) => index + 1).map(page => <button key={page} type="button" onClick={() => { setCatalogPage(page); document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' }) }} className={`w-10 h-10 rounded-xl font-bold ${page === catalogPage ? 'bg-[#C84E97] text-white' : 'bg-white border border-pink-200 text-gray-700'}`}>{page}</button>)}
             </nav>}
@@ -442,7 +510,7 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => { logout().finally(() => { setIsAdminOpen(false); window.location.assign('/') }) }}
         onAuthenticated={refreshStore}
-        categoriesList={Array.from(new Set([...categoriesList, ...products.flatMap(p => (p.categories?.length ? p.categories : [p.category]).filter(Boolean))]))}
+        categoriesList={allCategories}
         onSaveCategories={updated => persist('categories', updated, setCategories)}
         testimonials={testimonials}
         onSaveTestimonials={updated => persist('testimonials', updated, setTestimonials)}

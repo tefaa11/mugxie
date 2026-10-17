@@ -132,9 +132,10 @@ export function Footer({ storeConfig, onOpenAdmin, onNavigate }) {
         </div>
 
         {/* Barra inferior */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-gray-500 gap-3">
-          <p className="flex items-center gap-1">
-            Hecho con <Heart size={15} className="text-[#C84E97] fill-[#C84E97]" /> para Mugxie © {new Date().getFullYear()} • Todos los derechos reservados.
+        <div className="pt-6 flex items-center justify-center text-xs sm:text-sm text-gray-500">
+          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center leading-relaxed">
+            <span className="inline-flex items-center gap-1">Hecho con <Heart size={15} className="text-[#C84E97] fill-[#C84E97] shrink-0" /> para Mugxie</span>
+            <span className="whitespace-nowrap">© {new Date().getFullYear()} • Todos los derechos reservados.</span>
           </p>
 
 

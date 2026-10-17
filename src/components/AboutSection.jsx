@@ -34,18 +34,12 @@ export function AboutSection({ storeConfig }) {
         {/* 1. Historia & Mascota (¿Quiénes somos y dónde nos ubicamos?) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white p-6 sm:p-10 rounded-3xl border-2 border-pink-100 shadow-sm">
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative">
-              <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-[#ebffd5] filter blur-xl absolute inset-0 -m-2"></div>
-              <div className="relative bg-[#FFF2F6] p-6 rounded-3xl border-2 border-pink-200 flex flex-col items-center text-center shadow-md">
-                <div className="absolute -top-11 -right-16 sm:-right-28 max-w-36 sm:max-w-44 bg-white border-2 border-pink-200 rounded-2xl p-2.5 text-[10px] sm:text-xs font-bold text-[#C84E97] shadow-sm after:absolute after:left-5 after:-bottom-2 after:w-3 after:h-3 after:bg-white after:border-r-2 after:border-b-2 after:border-pink-200 after:rotate-45">¡Hola! Qué alegría que estés aquí. ✨</div>
-                <img src="/pipe.png" alt="Pipe" className="w-44 h-44 object-contain animate-mango" />
-                <h3 className="font-heading text-xl font-bold text-gray-900 mt-2">
-                  Pipe
-                </h3>
-                <span className="text-xs text-[#C84E97] font-bold">
-                  Nuestro anfitrión oficial ✨
-                </span>
-              </div>
+            <div className="relative flex flex-col items-center text-center py-4">
+              <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-pink-200/70 via-[#ebffd5]/90 to-[#5FD6FF]/50 filter blur-2xl absolute inset-0 m-auto animate-aura"></div>
+              <div className="relative max-w-44 sm:max-w-52 self-end mr-1 sm:-mr-10 mb-1 bg-white/95 border-2 border-pink-200 rounded-2xl p-2.5 text-[10px] sm:text-xs font-bold text-[#C84E97] shadow-sm text-left after:absolute after:left-5 after:-bottom-2 after:w-3 after:h-3 after:bg-white after:border-r-2 after:border-b-2 after:border-pink-200 after:rotate-45">¡Hola! Qué alegría que estés aquí. ✨</div>
+              <img src="/pipe.png" alt="Pipe" className="relative w-56 h-56 sm:w-72 sm:h-72 object-contain animate-mango" />
+              <h3 className="relative font-heading text-xl font-bold text-gray-900 -mt-2">Pipe</h3>
+              <span className="relative text-xs text-[#C84E97] font-bold">Nuestro anfitrión oficial ✨</span>
             </div>
           </div>
 

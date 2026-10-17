@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { ChevronDown, MessageCircleQuestion, Sparkles } from 'lucide-react'
 
 const questions = [
@@ -15,12 +15,26 @@ function Answer({ text, right }) {
 
 export function FaqSection() {
   const [open, setOpen] = useState(0)
+  const questionRefs = useRef([])
+  const handleQuestion = (index, selected) => {
+    setOpen(selected ? -1 : index)
+    if (!selected) {
+      window.setTimeout(() => {
+        const question = questionRefs.current[index]
+        if (!question) return
+        const isMobile = window.matchMedia('(max-width: 639px)').matches
+        const offset = isMobile ? Math.min(190, window.innerHeight * 0.25) : Math.min(240, window.innerHeight * 0.28)
+        const top = window.scrollY + question.getBoundingClientRect().top - offset
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      }, 80)
+    }
+  }
   return <section id="preguntas-frecuentes" className="py-16 sm:py-24 bg-gradient-to-b from-[#fff8fa] via-[#eefbe4] to-white border-t-2 border-pink-100">
     <div className="max-w-5xl mx-auto px-4 sm:px-8">
       <div className="text-center max-w-2xl mx-auto mb-9"><span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#ebffd5] text-[#2c5315] border border-[#c2ebb0] text-xs font-heading font-extrabold"><MessageCircleQuestion size={15}/>Mango responde tus dudas</span><h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Preguntas frecuentes 💬</h2><p className="text-sm text-gray-600 mt-3">Toca una pregunta y Mango te responderá.</p></div>
       <div className="space-y-4">{questions.map(([question, answer], index) => { const selected=open===index; const right=index%2===1; return <div key={question} className={`flex ${right?'justify-end':'justify-start'} gap-3 items-start`}>
         {!right && <img src="/mango.png" alt="Mango" className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0 animate-mango"/>}
-        <div className="w-full max-w-2xl"><button type="button" onClick={()=>setOpen(selected?-1:index)} className={`w-full text-left rounded-3xl border-2 p-4 sm:p-5 flex items-center gap-3 transition-all ${selected?'bg-white border-[#C84E97] shadow-lg shadow-pink-100':'bg-[#fff0f7] border-pink-200 hover:border-pink-400 hover:-translate-y-0.5'}`}><span className="w-8 h-8 shrink-0 rounded-full bg-[#C84E97] text-white flex items-center justify-center font-heading font-bold text-sm">{index+1}</span><span className="font-heading text-sm sm:text-base font-bold text-gray-900 flex-1">{question}</span><ChevronDown size={20} className={`text-[#C84E97] transition-transform ${selected?'rotate-180':''}`}/></button>{selected&&<Answer text={answer} right={right}/>}</div>
+        <div className="w-full max-w-2xl"><button ref={node => { questionRefs.current[index] = node }} type="button" onClick={() => handleQuestion(index, selected)} className={`w-full text-left rounded-3xl border-2 p-4 sm:p-5 flex items-center gap-3 transition-all ${selected?'bg-white border-[#C84E97] shadow-lg shadow-pink-100':'bg-[#fff0f7] border-pink-200 hover:border-pink-400 hover:-translate-y-0.5'}`}><span className="w-8 h-8 shrink-0 rounded-full bg-[#C84E97] text-white flex items-center justify-center font-heading font-bold text-sm">{index+1}</span><span className="font-heading text-sm sm:text-base font-bold text-gray-900 flex-1">{question}</span><ChevronDown size={20} className={`text-[#C84E97] transition-transform ${selected?'rotate-180':''}`}/></button>{selected&&<div className="scroll-mt-20"><Answer text={answer} right={right}/></div>}</div>
         {right && <img src="/mango.png" alt="Mango" className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0 animate-mango"/>}
       </div>})}</div>
     </div>

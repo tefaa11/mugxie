@@ -1,5 +1,5 @@
 import { login, uploadMedia, getSession } from '../utils/api'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   X,
   Plus,
@@ -24,6 +24,32 @@ import { formatCOP } from '../utils/whatsapp'
 import { ContentManager } from './ContentManager'
 import { MugPlaceholder } from './MugPlaceholder'
 import { parseVideoUrl } from '../utils/mediaStorage'
+import { matchesSearch as textMatches } from '../utils/search'
+
+function AdminProductThumbnail({ product }) {
+  const gallery = useMemo(() => Array.from(new Set([
+    product.image,
+    ...(product.images || []),
+    ...(product.variants || []).map(variant => variant.image),
+  ].filter(Boolean))), [product])
+  const [imageIndex, setImageIndex] = useState(0)
+  const [imageError, setImageError] = useState(false)
+  const image = gallery[imageIndex % Math.max(gallery.length, 1)]
+
+  useEffect(() => { setImageIndex(0); setImageError(false) }, [product.id])
+  useEffect(() => {
+    if (gallery.length < 2) return undefined
+    const interval = window.setInterval(() => setImageIndex(index => (index + 1) % gallery.length), 2000)
+    return () => window.clearInterval(interval)
+  }, [gallery.length])
+  useEffect(() => setImageError(false), [image])
+
+  return <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#ffe6f3] via-[#efe6ff] to-[#e2fbf5] border border-pink-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+    {image && !imageError ? <img src={image} alt={product.name} onError={() => setImageError(true)} className="w-full h-full object-contain" /> : <MugPlaceholder name={product.name} category={product.category} colorClass={product.iconColor} />}
+    {gallery.length > 1 && <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">{gallery.map((_, index) => <span key={index} className={`h-1 rounded-full ${index === imageIndex ? 'w-3 bg-[#C84E97]' : 'w-1 bg-white/90 border border-pink-200'}`} />)}</div>}
+    {product.video && <span className="absolute bottom-0 inset-x-0 bg-[#C84E97] text-white text-[8px] font-bold text-center">VIDEO</span>}
+  </div>
+}
 
 export function AdminModal({
   categoriesList,
@@ -56,6 +82,7 @@ export function AdminModal({
     reference: '',
     name: '',
     price: '',
+    capacityMl: '',
     category: '',
     categories: [],
     description: '',
@@ -63,6 +90,8 @@ export function AdminModal({
     isAvailable: true,
     isImmediateDelivery: false,
     isLastUnit: false,
+    isCouplePromotion: false,
+    pairPrice: '',
     isVisible: true,
     image: '',
     images: [],
@@ -149,7 +178,7 @@ export function AdminModal({
   }
 
   const openEditProductForm = (product) => {
-    setFormData({ ...product, categories: product.categories?.length ? product.categories.filter(Boolean) : [product.category].filter(Boolean), variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
+    setFormData({ ...product, capacityMl: product.capacityMl ?? '', categories: product.categories?.length ? product.categories.filter(Boolean) : [product.category].filter(Boolean), isCouplePromotion: product.isCouplePromotion === true, pairPrice: product.pairPrice ?? '', variants: (product.variants || []).map(variant => ({ ...variant, isImmediateDelivery: variant.isImmediateDelivery === true })) })
     setEditingProduct(product.id)
     setCategorySearch('')
     setIsFormOpen(true)
@@ -169,8 +198,11 @@ export function AdminModal({
       ...formData,
       categories: selectedCategories,
       category: selectedCategories[0] || '',
+      capacityMl: formData.capacityMl === '' ? undefined : Number(formData.capacityMl),
       isImmediateDelivery: formData.isAvailable && formData.isImmediateDelivery,
       isLastUnit: formData.isAvailable && formData.isLastUnit,
+      isCouplePromotion: formData.isCouplePromotion === true,
+      pairPrice: formData.isCouplePromotion ? Number(formData.pairPrice) : undefined,
       reference: formData.reference?.trim() || `MG-${Date.now().toString().slice(-3)}`,
     }
 
@@ -247,16 +279,16 @@ export function AdminModal({
   }
 
   const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.categories || []).some(category => category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.variants || []).some(variant => variant.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    const matchesText =
+      textMatches(p.name, searchQuery) ||
+      textMatches(p.reference, searchQuery) ||
+      textMatches(p.category, searchQuery) ||
+      (p.categories || []).some(category => textMatches(category, searchQuery)) ||
+      (p.variants || []).some(variant => textMatches(variant.name, searchQuery))
     const productCategories = p.categories?.length ? p.categories : [p.category]
     const matchesCat = filterCategory === 'Todos' ||
       (filterCategory === '__agotados__' ? p.isAvailable === false : productCategories.includes(filterCategory))
-    return matchesSearch && matchesCat
+    return matchesText && matchesCat
   })
 
   return (
@@ -439,22 +471,7 @@ export function AdminModal({
                               }`}
                             >
                               {/* Miniatura */}
-                              <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-[#ffe6f3] via-[#efe6ff] to-[#e2fbf5] border border-pink-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
-                                {p.image ? (
-                                  <img
-                                    src={p.image}
-                                    alt={p.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <MugPlaceholder name={p.name} category={p.category} colorClass={p.iconColor} />
-                                )}
-                                {p.video && (
-                                  <span className="absolute bottom-0 inset-x-0 bg-[#C84E97] text-white text-[8px] font-bold text-center">
-                                    VIDEO
-                                  </span>
-                                )}
-                              </div>
+                              <AdminProductThumbnail product={p} />
 
                               {/* Info con Referencia */}
                               <div className="flex-1 min-w-0">
@@ -569,9 +586,9 @@ export function AdminModal({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
+                        <div className="space-y-3">
                           <label className="text-xs font-bold text-gray-700 block mb-1">
-                            Precio en COP ($) *
+                            Precio individual en COP ($) *
                           </label>
                           <input
                             type="number"
@@ -584,16 +601,28 @@ export function AdminModal({
                             }
                             className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 font-bold"
                           />
+                          <div>
+                            <label className="text-xs font-bold text-gray-700 block mb-1">Capacidad (ml) <span className="font-normal text-gray-400">opcional</span></label>
+                            <input type="number" min="1" max="10000" step="1" placeholder="Ej. 350" value={formData.capacityMl} onChange={e => setFormData(prev => ({ ...prev, capacityMl: e.target.value === '' ? '' : Number(e.target.value) }))} className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 font-bold" />
+                          </div>
                         </div>
 
                         <div>
                           <label className="text-xs font-bold text-gray-700 block mb-1">Categorías (opcional): busca y marca una o varias</label>
                           <div className="rounded-xl border border-pink-200 bg-white p-2 space-y-2">
+                            {(formData.categories || []).filter(Boolean).length > 0 && <div className="rounded-lg bg-pink-50 border border-pink-100 p-2">
+                              <p className="text-[10px] font-bold text-[#A93879] mb-1.5">Categorías elegidas ({(formData.categories || []).filter(Boolean).length})</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(formData.categories || []).filter(Boolean).map(category => <button key={category} type="button" onClick={() => setFormData(prev => { const categories = (prev.categories || []).filter(item => item !== category); return { ...prev, categories, category: categories[0] || '' } })} className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2 py-1 text-[10px] font-bold text-[#A93879] hover:bg-pink-100" title={`Quitar ${category}`}>
+                                  {category}<span aria-hidden="true" className="text-sm leading-none">×</span>
+                                </button>)}
+                              </div>
+                            </div>}
                             <div className="relative"><Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C84E97] pointer-events-none" /><input type="search" value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="Buscar categoría aquí…" className="w-full pl-8 pr-2.5 py-2.5 text-xs bg-pink-50 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-[#C84E97]" /></div>
                             <div className="max-h-24 overflow-y-auto space-y-1">
-                            {categoriesList.filter(c => c !== 'Todos' && c.toLowerCase().includes(categorySearch.toLowerCase())).map((cat) => {
+                            {categoriesList.filter(c => c !== 'Todos' && textMatches(c, categorySearch)).map((cat) => {
                               const checked = (formData.categories || []).includes(cat)
-                              return <label key={cat} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" checked={checked} onChange={() => setFormData(prev => { const categories = checked ? prev.categories.filter(item => item !== cat) : [...(prev.categories || []), cat]; return { ...prev, categories, category: categories[0] || prev.category } })} /><span>{cat}</span></label>
+                              return <label key={cat} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" checked={checked} onChange={() => setFormData(prev => { const categories = checked ? prev.categories.filter(item => item !== cat) : [...(prev.categories || []), cat]; return { ...prev, categories, category: categories[0] || '' } })} /><span>{cat}</span></label>
                             })}
                             </div>
                           </div>
@@ -611,7 +640,24 @@ export function AdminModal({
                             onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                             className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300"
                           />
+                          <p className="text-[10px] text-gray-500 mt-1.5">Sugerencias rápidas:</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {['✨ Nuevo', '🔥 Más pedido', '⭐ Edición especial', '🎁 Ideal para regalo', '💞 Promo pareja', '⚡ Entrega inmediata', '💖 Favorito', '🌈 Varios diseños', '🎨 Diseño exclusivo', '🧸 Cute & Kawaii', '🎬 Clásico favorito', '🎄 Especial de temporada', '💫 Colección limitada', '👯 Para compartir'].map(badge => <button key={badge} type="button" onClick={() => setFormData(prev => ({ ...prev, badge }))} className={`rounded-full border px-2 py-1 text-[10px] font-bold transition-colors ${formData.badge === badge ? 'bg-[#C84E97] border-[#C84E97] text-white' : 'bg-pink-50 border-pink-200 text-[#A93879] hover:bg-pink-100'}`}>{badge}</button>)}
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 sm:p-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-heading font-bold text-gray-800">
+                          <input type="checkbox" checked={formData.isCouplePromotion === true} onChange={e => setFormData(prev => ({ ...prev, isCouplePromotion: e.target.checked, pairPrice: e.target.checked ? prev.pairPrice : '' }))} className="w-4 h-4 accent-[#C84E97]" />
+                          💞 ¿Tiene promoción de pareja?
+                        </label>
+                        <p className="text-xs text-gray-600 mt-1">Actívala para vender dos mugs juntos por un precio especial.</p>
+                        {formData.isCouplePromotion && <div className="mt-3 max-w-xs">
+                          <label className="text-xs font-bold text-gray-700 block mb-1">Precio por la pareja en COP ($) *</label>
+                          <input type="number" required min="0" step="1000" placeholder="Ej. 100000" value={formData.pairPrice} onChange={e => setFormData(prev => ({ ...prev, pairPrice: e.target.value === '' ? '' : Number(e.target.value) }))} className="w-full px-3 py-2 text-sm bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-200 font-bold" />
+                          <p className="text-[11px] text-amber-800 mt-1">La pareja contará como un producto para los descuentos por cantidad.</p>
+                        </div>}
                       </div>
 
                       {/* SECCIÓN DE FOTO */}
@@ -728,11 +774,11 @@ export function AdminModal({
 
                       <div>
                         <label className="text-xs font-bold text-gray-700 block mb-1">
-                          Descripción o detalles del producto
+                          Descripción o detalles del producto <span className="font-normal text-gray-400">(opcional)</span>
                         </label>
                         <textarea
                           rows={2}
-                          placeholder="Descripción breve: material, capacidad, acabados..."
+                          placeholder="Descripción breve: material, acabados, cuidados..."
                           value={formData.description}
                           onChange={(e) =>
                             setFormData({ ...formData, description: e.target.value })

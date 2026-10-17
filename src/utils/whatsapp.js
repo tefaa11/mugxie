@@ -8,7 +8,7 @@ export function formatCOP(amount) {
 }
 
 export function calculateOrderDiscount(cartItems) {
-  const quantity = cartItems.reduce((total, item) => total + (item.quantity || 1), 0)
+  const quantity = cartItems.reduce((total, item) => total + (item.discountUnits || 1) * (item.quantity || 1), 0)
   const subtotal = cartItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0)
   const rate = quantity >= 8 ? 0.10 : quantity >= 4 ? 0.05 : 0
   const discount = Math.round(subtotal * rate)
@@ -28,12 +28,12 @@ export function generateWhatsAppOrder({ cartItems, storeConfig }) {
     const subtotal = (item.price || 0) * qty
     const refText = item.reference ? ` (Ref: ${item.reference})` : ''
 
-    text += `${index + 1}. ${item.name}${refText}\n`
-    text += `   • Cantidad: ${qty}\n`
+    text += `${index + 1}. ${item.cartLabel || item.name}${refText}\n`
+    text += `   • Cantidad: ${qty}${item.purchaseType === 'couple' ? ' pareja' : ''}\n`
     text += `   • Valor: ${formatCOP(item.price)} c/u (Subtotal: ${formatCOP(subtotal)})\n\n`
   })
 
-  if (order.discount) text += `Descuento por ${order.quantity} Mugs (${Math.round(order.rate * 100)}%): -${formatCOP(order.discount)}\n\n`
+  if (order.discount) text += `Descuento por ${order.quantity} productos (${Math.round(order.rate * 100)}%): -${formatCOP(order.discount)}\n\n`
   text += `*💰 TOTAL A PAGAR: ${formatCOP(order.total)}*\n\n`
 
   text += `¿Tienen disponibilidad para despacho? ¡Quedo muy atento/a para coordinar el pago! ✨🐱`

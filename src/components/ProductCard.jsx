@@ -15,11 +15,15 @@ export function ProductCard({
   onViewDetails,
 }) {
   const [imageError, setImageError] = useState(false)
-  const isAvailable = product.isAvailable !== false
+  const matchedVariant = product.searchMatchedVariant
+  const isAvailable = matchedVariant ? matchedVariant.isAvailable !== false : product.isAvailable !== false
+  const cartProduct = matchedVariant ? { ...product, ...matchedVariant, name: `${product.name} · ${matchedVariant.name}`, variantId: matchedVariant.id, image: matchedVariant.image || product.image } : product
   const gallery = useMemo(() => Array.from(new Set([
-    product.image,
-    ...(product.images || []),
-    ...(product.variants || []).map(variant => variant.image),
+    ...(product.searchMatchedVariant?.image ? [product.searchMatchedVariant.image] : [
+      product.image,
+      ...(product.images || []),
+      ...(product.variants || []).map(variant => variant.image),
+    ]),
   ].filter(Boolean))), [product])
   const [previewIndex, setPreviewIndex] = useState(0)
   const previewImage = gallery[previewIndex % Math.max(gallery.length, 1)]
@@ -27,7 +31,7 @@ export function ProductCard({
   useEffect(() => { setPreviewIndex(0); setImageError(false) }, [product.id])
   useEffect(() => {
     if (gallery.length < 2) return undefined
-    const interval = window.setInterval(() => setPreviewIndex(index => (index + 1) % gallery.length), 4000)
+    const interval = window.setInterval(() => setPreviewIndex(index => (index + 1) % gallery.length), 2000)
     return () => window.clearInterval(interval)
   }, [gallery.length])
   useEffect(() => setImageError(false), [previewImage])
@@ -49,12 +53,12 @@ export function ProductCard({
       })
     } catch (_) {}
 
-    onAddToCart(product)
+    onAddToCart(cartProduct)
   }
 
   const handleQuickWhatsApp = (e) => {
     e.stopPropagation()
-    onQuickOrder(product)
+    onQuickOrder(cartProduct)
   }
 
   return (
@@ -68,6 +72,11 @@ export function ProductCard({
           <div className="bg-gradient-to-r from-[#C84E97] to-[#B24185] text-white text-[9px] sm:text-[11px] font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-md flex items-center gap-1 font-heading">
             <Sparkles size={11} className="text-[#FFDE59]" />
             <span>{product.badge}</span>
+          </div>
+        )}
+        {product.isCouplePromotion && Number.isSafeInteger(product.pairPrice) && (
+          <div className="bg-amber-400 text-amber-950 text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+            💞 Promo pareja
           </div>
         )}
         {product.video && parseVideoUrl(product.video).type !== 'blocked' && (
@@ -153,8 +162,8 @@ export function ProductCard({
       <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between bg-white">
         <div>
           <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-[#C84E97] uppercase font-heading truncate">
-              {product.category || 'Mug 3D'}
+            <span className="min-w-0 flex-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#C84E97] uppercase font-heading leading-tight line-clamp-2">
+              {(product.categories?.length ? product.categories : [product.category]).filter(Boolean).join(' / ') || 'Mug'}
             </span>
             {product.reference && (
               <span className="bg-[#ebffd5] text-[#2c5315] text-[9px] sm:text-[11px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md border border-[#c2ebb0] font-heading flex-shrink-0">
@@ -166,17 +175,17 @@ export function ProductCard({
           <h3 className="font-heading text-sm sm:text-xl font-bold text-gray-900 line-clamp-1 group-hover:text-[#C84E97] transition-colors">
             {product.name}
           </h3>
-          <p className="hidden sm:block text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-            {product.description || 'Mug 3D de cerámica de alta calidad con acabados prémium.'}
-          </p>
+          {matchedVariant && <p className="text-[10px] sm:text-xs font-bold text-[#C84E97] mt-0.5 truncate">Estilo: {matchedVariant.name}</p>}
+          {product.description && <p className="hidden sm:block text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">{product.description}</p>}
         </div>
 
         <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-3 border-t border-pink-100 flex items-center justify-between gap-1">
           <div>
-            <span className="text-[9px] sm:text-[11px] text-gray-400 block font-medium">Precio</span>
+            <span className="text-[9px] sm:text-[11px] text-gray-400 block font-medium">{product.isCouplePromotion ? 'Desde' : 'Precio'}</span>
             <span className="font-heading text-sm sm:text-2xl font-extrabold text-gray-900">
               {formatCOP(product.price)}
             </span>
+            {Number.isSafeInteger(product.capacityMl) && <span className="block text-[9px] sm:text-[11px] text-gray-500 font-bold">{product.capacityMl} ml</span>}
           </div>
 
           {/* Botones de acción rápida */}

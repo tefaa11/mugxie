@@ -57,7 +57,7 @@ export function CartDrawer({
                   Tu Carrito Mugxie 🛍️
                 </h2>
                 <span className="text-xs text-pink-600 font-bold">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'Mug seleccionado' : 'Mugs seleccionados'}
+                  {totalItemsCount} {totalItemsCount === 1 ? 'producto seleccionado' : 'productos seleccionados'}
                 </span>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function CartDrawer({
                 <div className="space-y-3">
                   {cartItems.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.cartId || item.id}
                       className="p-3.5 bg-pink-50/50 rounded-2xl border border-pink-200 flex items-center gap-3.5 hover:border-pink-300 transition-colors"
                     >
                       {/* Miniatura */}
@@ -113,7 +113,7 @@ export function CartDrawer({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h4 className="font-heading text-sm font-bold text-gray-800 truncate">
-                            {item.name}
+                            {item.cartLabel || item.name}
                           </h4>
                           {item.reference && (
                             <span className="bg-[#ebffd5] text-[#2c5315] text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-[#c2ebb0] font-heading">
@@ -123,14 +123,14 @@ export function CartDrawer({
                         </div>
 
                         <div className="text-xs font-bold text-[#C84E97] mt-0.5">
-                          {formatCOP(item.price)} c/u
+                          {formatCOP(item.price)} {item.purchaseType === 'couple' ? 'por pareja' : 'c/u'}
                         </div>
 
                         {/* Controles de cantidad */}
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             type="button"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => onUpdateQuantity(item.cartId || item.id, item.quantity - 1)}
                             className="w-7 h-7 rounded-lg bg-white border border-pink-200 text-pink-600 flex items-center justify-center hover:bg-pink-100 transition-colors shadow-2xs"
                           >
                             <Minus size={13} />
@@ -140,7 +140,7 @@ export function CartDrawer({
                           </span>
                           <button
                             type="button"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => onUpdateQuantity(item.cartId || item.id, item.quantity + 1)}
                             className="w-7 h-7 rounded-lg bg-white border border-pink-200 text-pink-600 flex items-center justify-center hover:bg-pink-100 transition-colors shadow-2xs"
                           >
                             <Plus size={13} />
@@ -152,7 +152,7 @@ export function CartDrawer({
                       <div className="flex flex-col items-end justify-between self-stretch">
                         <button
                           type="button"
-                          onClick={() => onRemoveItem(item.id)}
+                          onClick={() => onRemoveItem(item.cartId || item.id)}
                           className="text-gray-300 hover:text-rose-500 transition-colors p-1"
                           title="Eliminar del carrito"
                         >
@@ -187,8 +187,8 @@ export function CartDrawer({
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-gray-900">{formatCOP(orderDetails.total)}</span>
               </div>
 
-              {discountInfo.discount > 0 && <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800"><div className="flex justify-between font-bold"><span>Descuento por {discountInfo.quantity} Mugs ({Math.round(discountInfo.rate * 100)}%)</span><span>-{formatCOP(discountInfo.discount)}</span></div><p className="mt-1 text-emerald-700">Aplicado al valor de los Mugs. El envío no está incluido.</p></div>}
-              {discountInfo.quantity > 0 && discountInfo.quantity < 4 && <p className="text-xs text-[#2c5315] bg-[#ebffd5] rounded-xl border border-[#c2ebb0] p-2.5">Agrega {4 - discountInfo.quantity} Mug{4 - discountInfo.quantity === 1 ? '' : 's'} más y recibe 5% de descuento.</p>}
+              {discountInfo.discount > 0 && <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800"><div className="flex justify-between font-bold"><span>Descuento por {discountInfo.quantity} productos ({Math.round(discountInfo.rate * 100)}%)</span><span>-{formatCOP(discountInfo.discount)}</span></div><p className="mt-1 text-emerald-700">Aplicado al valor de los Mugs. El envío no está incluido.</p></div>}
+              {discountInfo.quantity > 0 && discountInfo.quantity < 4 && <p className="text-xs text-[#2c5315] bg-[#ebffd5] rounded-xl border border-[#c2ebb0] p-2.5">Agrega {4 - discountInfo.quantity} producto{4 - discountInfo.quantity === 1 ? '' : 's'} más y recibe 5% de descuento.</p>}
 
               {/* Botón Principal WhatsApp */}
               <button

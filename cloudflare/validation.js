@@ -28,6 +28,7 @@ export function validateResource(name, value) {
     const categories = value.map(c => text(c,80,true))
     if (new Set(categories.map(c => c.toLocaleLowerCase())).size !== categories.length) fail('Hay categorías repetidas.')
     if (!categories.includes('Todos')) categories.unshift('Todos')
+    if (!categories.includes('Parejas')) categories.push('Parejas')
     return categories
   }
   const ids = new Set()
@@ -42,6 +43,11 @@ export function validateResource(name, value) {
     }
     if (name !== 'products') fail('Tipo de datos inválido.')
     if (!Number.isSafeInteger(item.price) || item.price < 0) fail('Precio inválido.')
+    const capacityMl = item.capacityMl === '' || item.capacityMl === undefined ? undefined : Number(item.capacityMl)
+    if (capacityMl !== undefined && (!Number.isSafeInteger(capacityMl) || capacityMl <= 0 || capacityMl > 10000)) fail('La capacidad en ml es inválida.')
+    const isCouplePromotion = item.isCouplePromotion === true
+    const pairPrice = item.pairPrice === '' || item.pairPrice === undefined ? undefined : Number(item.pairPrice)
+    if (isCouplePromotion && (!Number.isSafeInteger(pairPrice) || pairPrice < 0)) fail('El precio de la promoción de pareja es inválido.')
     if (item.video !== undefined && typeof item.video !== 'string') fail('Video inválido.')
     if (parseVideoUrl(item.video).type === 'blocked') fail('Los enlaces de TikTok no están permitidos.')
     const variants = item.variants === undefined ? [] : item.variants
@@ -63,8 +69,9 @@ export function validateResource(name, value) {
     const safeCategories = [...new Set(categories.map(category => text(category, 80)).filter(Boolean))]
     return {
       id, reference:text(item.reference,80,true), name:text(item.name,200,true), price:item.price,
-      category:safeCategories[0] || '', categories:safeCategories, description:text(item.description || '',4000), badge:text(item.badge || '',100),
+      category:safeCategories[0] || '', categories:safeCategories, description:text(item.description || '',4000), capacityMl, badge:text(item.badge || '',100),
       isAvailable:item.isAvailable !== false, isImmediateDelivery:item.isAvailable !== false && item.isImmediateDelivery === true, isLastUnit:item.isAvailable !== false && item.isLastUnit === true, isVisible:item.isVisible !== false,
+      isCouplePromotion, pairPrice: isCouplePromotion ? pairPrice : undefined,
       image:mediaUrl(item.image), images: images.map(image => mediaUrl(image, true)), video:mediaUrl(item.video), iconColor:text(item.iconColor || '',200),
       variants: safeVariants,
     }

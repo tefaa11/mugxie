@@ -1,7 +1,30 @@
 import React from 'react'
 import { Sparkles, Heart, ArrowDown, Package, ShieldCheck, BadgePercent } from 'lucide-react'
 
-export function Hero({ onExploreClick, storeConfig, onFaqClick }) {
+export function Hero({ onExploreClick, storeConfig, onFaqClick, immediateReferences = 0 }) {
+  const immediateLabel = `⭐ ${immediateReferences} ${immediateReferences === 1 ? 'referencia disponible' : 'referencias disponibles'} para despacho inmediato`
+
+  const MangoGuide = ({ compact = false }) => (
+    <div className={`relative flex flex-col items-center text-center ${compact ? 'w-full max-w-sm mx-auto' : ''}`}>
+      <div className={`rounded-full bg-gradient-to-tr from-pink-200/70 via-[#ebffd5]/90 to-[#5FD6FF]/50 blur-2xl absolute animate-aura ${compact ? 'w-52 h-52 sm:w-64 sm:h-64 top-3' : 'w-72 h-72 sm:w-96 sm:h-96 top-6'}`} />
+      <button
+        type="button"
+        onClick={onFaqClick}
+        className={`relative z-10 self-end mr-1 sm:mr-0 max-w-48 bg-[#fff0f7] border-2 border-pink-200 rounded-2xl p-2.5 text-[10px] sm:text-xs font-bold text-[#C84E97] shadow-sm text-left hover:scale-105 transition-transform after:absolute after:left-6 after:-bottom-2 after:w-3 after:h-3 after:bg-[#fff0f7] after:border-r-2 after:border-b-2 after:border-pink-200 after:rotate-45 ${compact ? '-mb-1' : 'mb-1'}`}
+      >
+        Estas son las dudas más frecuentes. Toca aquí y te ayudo 💬
+      </button>
+      <img src="/mango.png" alt="Mango" className={`relative z-10 object-contain animate-mango ${compact ? 'w-52 h-52 sm:w-64 sm:h-64' : 'w-72 h-72 sm:w-80 sm:h-80'}`} />
+      <div className="relative z-10 -mt-4">
+        <h3 className="font-heading text-lg sm:text-xl font-bold text-gray-900">¡Hola, soy Mango! 🥭</h3>
+        <p className="text-xs sm:text-sm text-[#C84E97] font-bold">Tu compañero para los mejores Mugs</p>
+      </div>
+      <div className="relative z-10 mt-2 px-3.5 py-1.5 bg-[#ebffd5]/95 rounded-xl border border-[#c2ebb0] text-xs text-[#2c5315] font-extrabold shadow-sm">
+        {immediateLabel}
+      </div>
+    </div>
+  )
+
   return (
     <section className="relative overflow-hidden py-10 sm:py-16 bg-gradient-to-b from-[#FFF0F6] via-[#F7FFED] to-[#FFF8FA]">
       {/* Elementos decorativos de fondo flotantes */}
@@ -16,9 +39,9 @@ export function Hero({ onExploreClick, storeConfig, onFaqClick }) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_360px] lg:justify-center gap-8 items-center">
           {/* Texto y llamado a la acción */}
-          <div className="lg:col-span-7 text-center lg:text-left space-y-5">
+          <div className="text-center lg:text-left space-y-5">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#ebffd5] border border-[#c2ebb0] shadow-xs text-xs sm:text-sm font-heading font-extrabold text-[#2c5315]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2c5315] animate-ping"></span>
               <span>¡Nuevas referencias disponibles en catálogo! ✨</span>
@@ -30,6 +53,11 @@ export function Hero({ onExploreClick, storeConfig, onFaqClick }) {
                 favoritos
               </span>
             </h1>
+
+            {/* En celular y tablet Mango acompaña el título, antes del resto de la información. */}
+            <div className="lg:hidden py-1">
+              <MangoGuide compact />
+            </div>
 
             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-[#ebffd5] border border-[#c2ebb0] text-sm font-heading font-extrabold text-[#2c5315] shadow-2xs">
               <span className="w-7 h-[18px] rounded-sm overflow-hidden border border-[#2c5315]/20 shadow-xs flex flex-col" aria-label="Bandera de Colombia"><i className="h-1/2 bg-[#FCD116]" /><i className="h-1/4 bg-[#003893]" /><i className="h-1/4 bg-[#CE1126]" /></span>
@@ -73,27 +101,9 @@ export function Hero({ onExploreClick, storeConfig, onFaqClick }) {
             </div>
           </div>
 
-          {/* Mascota / Tarjeta lateral */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative">
-              <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-pink-200/60 via-[#ebffd5]/80 to-[#5FD6FF]/30 filter blur-2xl absolute inset-0 -m-4 animate-aura"></div>
-
-              <div className="relative bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-3xl border-2 border-pink-200 shadow-xl shadow-pink-100 flex flex-col items-center text-center">
-                <button type="button" onClick={onFaqClick} className="absolute -top-9 -left-5 sm:-left-16 max-w-44 bg-[#fff0f7] border-2 border-pink-200 rounded-2xl p-2.5 text-[10px] sm:text-xs font-bold text-[#C84E97] shadow-sm text-left hover:scale-105 transition-transform after:absolute after:right-5 after:-bottom-2 after:w-3 after:h-3 after:bg-[#fff0f7] after:border-r-2 after:border-b-2 after:border-pink-200 after:rotate-45">Estas son las dudas más frecuentes. ¡Tócalas y te ayudo! 💬</button>
-                <img src="/mango.png" alt="Mango" className="w-48 h-48 sm:w-60 sm:h-60 object-contain animate-mango" />
-                <div className="mt-3">
-                  <h3 className="font-heading text-xl font-bold text-gray-900">
-                    ¡Hola, soy Mango! 🥭
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#C84E97] font-bold">
-                    Tu compañero para los mejores Mugs
-                  </p>
-                </div>
-                <div className="mt-4 px-3.5 py-1.5 bg-[#ebffd5] rounded-xl border border-[#c2ebb0] text-xs text-[#2c5315] font-extrabold">
-                  ⭐ +25 referencias disponibles para despacho inmediato
-                </div>
-              </div>
-            </div>
+          {/* Mango queda libre sobre el fondo en escritorio. */}
+          <div className="hidden lg:flex justify-center">
+            <MangoGuide />
           </div>
         </div>
       </div>

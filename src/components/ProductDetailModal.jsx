@@ -37,12 +37,15 @@ export function ProductDetailModal({
   const [videoError, setVideoError] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [selectedPhoto, setSelectedPhoto] = useState('')
+  const [purchaseType, setPurchaseType] = useState('single')
   const selectedVariant = useMemo(() => (product?.variants || []).find(v => v.id === selectedVariantId), [product, selectedVariantId])
   const displayedProduct = selectedVariant ? { ...product, ...selectedVariant, name: `${product.name} · ${selectedVariant.name}`, variantId: selectedVariant.id, image: selectedVariant.image || product.image } : product
   const photos = [displayedProduct?.image, ...(product?.images || [])].filter(Boolean)
 
   const isAvailable = displayedProduct?.isAvailable !== false
-  useEffect(() => { setSelectedVariantId(product?.variants?.[0]?.id || ''); setSelectedPhoto(product?.image || '') }, [product?.id])
+  const hasCouplePromotion = displayedProduct?.isCouplePromotion === true && Number.isSafeInteger(displayedProduct?.pairPrice)
+  const selectedPrice = hasCouplePromotion && purchaseType === 'couple' ? displayedProduct.pairPrice : displayedProduct?.price
+  useEffect(() => { setSelectedVariantId(product?.searchMatchedVariant?.id || product?.variants?.[0]?.id || ''); setSelectedPhoto(product?.searchMatchedVariant?.image || product?.image || ''); setPurchaseType('single') }, [product?.id, product?.searchMatchedVariant?.id])
   useEffect(() => { setSelectedPhoto(displayedProduct?.image || '') }, [selectedVariantId])
 
   // Resolver URL de video (YouTube, Drive, IndexedDB o MP4)
@@ -94,7 +97,7 @@ export function ProductDetailModal({
       })
     } catch (_) {}
 
-    onAddToCart({ ...displayedProduct, quantity })
+    onAddToCart({ ...displayedProduct, price: selectedPrice, purchaseType, discountUnits: 1, cartLabel: purchaseType === 'couple' ? `${displayedProduct.name} · Promoción de pareja` : displayedProduct.name, quantity })
     setAddedAnimation(true)
     setTimeout(() => setAddedAnimation(false), 2000)
   }
@@ -102,14 +105,14 @@ export function ProductDetailModal({
   const handleAddAllStyles = () => {
     const availableVariants = (product.variants || []).filter(variant => variant.isAvailable !== false)
     if (!availableVariants.length) return
-    availableVariants.forEach(variant => onAddToCart({ ...product, ...variant, name: `${product.name} · ${variant.name}`, variantId: variant.id, image: variant.image || product.image, quantity: 1 }))
+    availableVariants.forEach(variant => onAddToCart({ ...product, ...variant, name: `${product.name} · ${variant.name}`, variantId: variant.id, image: variant.image || product.image, purchaseType: 'single', discountUnits: 1, quantity: 1 }))
     setAddedAnimation(true)
     setTimeout(() => setAddedAnimation(false), 2000)
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5">
-      <div className="relative bg-white rounded-3xl w-full max-w-3xl h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-2.5rem)] overflow-hidden shadow-2xl border-2 border-pink-200 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-3xl w-full max-w-3xl h-[calc(100dvh-1rem)] md:h-[min(720px,calc(100dvh-2.5rem))] overflow-hidden shadow-2xl border-2 border-pink-200 animate-in fade-in zoom-in-95 duration-200">
         {/* Botón Cerrar */}
         <button
           onClick={onClose}
@@ -118,7 +121,7 @@ export function ProductDetailModal({
           <X size={22} />
         </button>
 
-        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-2 md:grid-rows-none items-stretch h-full md:h-auto">
+        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-2 md:grid-rows-none items-stretch h-full">
           {/* Media (Imagen o Video EN VIVO en el mismo contenedor) */}
           <div className="bg-gradient-to-br from-[#ffe6f3] via-[#efe6ff] to-[#e2fbf5] h-[37dvh] min-h-[240px] max-h-[300px] md:h-auto md:min-h-full md:max-h-none flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-pink-100">
             <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden">
@@ -236,11 +239,12 @@ export function ProductDetailModal({
           </div>
 
           {/* Información y Compra */}
-          <div className="min-h-0 p-4 sm:p-8 flex flex-col justify-between space-y-3 sm:space-y-5 overflow-y-auto">
+          <div className="min-h-0 flex flex-col bg-white">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-8">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-wrap gap-1.5">{(product.categories?.length ? product.categories : [product.category]).map(category => <button key={category} type="button" onClick={() => { onSelectCategory?.(category); onClose() }} className="text-left text-xs font-bold text-[#C84E97] uppercase tracking-wider font-heading hover:underline" title={`Ver ${category} en el catálogo`}>{category}</button>)}</div>
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">{(product.categories?.length ? product.categories : [product.category]).filter(Boolean).map((category, index) => <React.Fragment key={category}>{index > 0 && <span aria-hidden="true" className="text-xs font-bold text-pink-300">/</span>}<button type="button" onClick={() => { onSelectCategory?.(category); onClose() }} className="text-left text-xs font-bold text-[#C84E97] uppercase tracking-wider font-heading hover:underline" title={`Ver ${category} en el catálogo`}>{category}</button></React.Fragment>)}</div>
                   {product.reference && (
                     <span className="bg-[#ebffd5] text-[#2c5315] border border-[#c2ebb0] text-xs font-extrabold px-2.5 py-0.5 rounded-md font-heading">
                       Ref: {product.reference}
@@ -269,17 +273,21 @@ export function ProductDetailModal({
               {(product.variants || []).length > 0 && <div className="pt-1">
                 <p className="text-xs font-bold text-gray-700 mb-2">Elige color o diseño:</p>
                 <div className="flex flex-wrap gap-2">{product.variants.map(variant => <button key={variant.id} type="button" onClick={() => setSelectedVariantId(variant.id)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${selectedVariantId === variant.id ? 'bg-[#C84E97] border-[#C84E97] text-white' : 'bg-white border-pink-200 text-gray-700'}`}>{variant.name}</button>)}</div>
-                {(product.variants || []).filter(variant => variant.isAvailable !== false).length > 1 && <button type="button" onClick={handleAddAllStyles} className="mt-3 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#fff0f7] text-[#C84E97] border border-pink-200 hover:bg-pink-100 text-xs font-heading font-extrabold transition-colors"><ShoppingCart size={15} />Pedir todos los estilos</button>}
+                {!hasCouplePromotion && (product.variants || []).filter(variant => variant.isAvailable !== false).length > 1 && <button type="button" onClick={handleAddAllStyles} className="mt-3 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#fff0f7] text-[#C84E97] border border-pink-200 hover:bg-pink-100 text-xs font-heading font-extrabold transition-colors"><ShoppingCart size={15} />Pedir todos los estilos</button>}
               </div>}
 
-              <div className="text-3xl font-extrabold text-gray-900 font-heading">
-                {formatCOP(displayedProduct.price)}
-              </div>
+              {hasCouplePromotion ? <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-2.5 sm:p-3">
+                <div className="flex items-center justify-between gap-2 mb-2"><p className="font-heading font-extrabold text-sm text-amber-900">💞 Llévalos en pareja y ahorra</p><span className="text-[10px] font-bold text-amber-800 shrink-0">Promo especial</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setPurchaseType('single')} className={`rounded-xl border p-2.5 text-left transition-colors ${purchaseType === 'single' ? 'bg-white border-[#C84E97] ring-1 ring-pink-200' : 'bg-white/60 border-amber-200 hover:bg-white'}`}><span className="block text-[10px] font-bold text-gray-500">Uno solo</span><span className="font-heading text-base font-extrabold text-gray-900">{formatCOP(displayedProduct.price)}</span></button>
+                  <button type="button" onClick={() => setPurchaseType('couple')} className={`rounded-xl border p-2.5 text-left transition-colors ${purchaseType === 'couple' ? 'bg-white border-[#C84E97] ring-1 ring-pink-200' : 'bg-white/60 border-amber-200 hover:bg-white'}`}><span className="block text-[10px] font-bold text-gray-500">La pareja</span><span className="font-heading text-base font-extrabold text-[#C84E97]">{formatCOP(displayedProduct.pairPrice)}</span></button>
+                </div>
+                <p className="mt-2 text-[11px] text-amber-900">Ahorras {formatCOP(Math.max(0, displayedProduct.price * 2 - displayedProduct.pairPrice))}. La pareja cuenta como 1 producto para descuentos por cantidad.</p>
+              </div> : <div className="text-3xl font-extrabold text-gray-900 font-heading">{formatCOP(displayedProduct.price)}</div>}
 
-              <p className="text-sm text-gray-600 leading-relaxed pt-1">
-                {displayedProduct.description ||
-                  'Mug coleccionable de cerámica fina con relieve 3D. Apto para microondas, acabado esmaltado brillante de alta durabilidad.'}
-              </p>
+              {Number.isSafeInteger(displayedProduct.capacityMl) && <p className="inline-flex w-fit items-center rounded-full bg-sky-50 border border-sky-200 px-3 py-1.5 text-xs font-bold text-sky-800">Capacidad: {displayedProduct.capacityMl} ml</p>}
+
+              {displayedProduct.description && <p className="text-sm text-gray-600 leading-relaxed pt-1">{displayedProduct.description}</p>}
 
               {/* Estado de stock con #ebffd5 */}
               <div className="pt-1">
@@ -295,9 +303,10 @@ export function ProductDetailModal({
                 )}
               </div>
             </div>
+            </div>
 
             {/* Acciones de compra */}
-            <div className="space-y-2.5 sm:space-y-3.5 pt-3 sm:pt-4 border-t border-pink-100 sticky bottom-0 bg-white pb-1">
+            <div className="shrink-0 space-y-2.5 sm:space-y-3.5 p-4 sm:px-8 sm:pb-6 border-t border-pink-100 bg-white">
               {isAvailable ? (
                 <>
                   {/* Selector de cantidad con #ebffd5 */}
@@ -328,7 +337,7 @@ export function ProductDetailModal({
                   <button
                     type="button"
                     onClick={handleAdd}
-                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#C84E97] via-[#D4559F] to-[#B24185] hover:from-[#B24185] hover:to-[#A93C7E] text-white font-heading text-base font-bold shadow-md shadow-pink-200 flex items-center justify-center gap-2.5 transition-all active:scale-95"
+                    className="w-full py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-[#C84E97] via-[#D4559F] to-[#B24185] hover:from-[#B24185] hover:to-[#A93C7E] text-white font-heading text-base font-bold shadow-md shadow-pink-200 flex items-center justify-center gap-2.5 transition-all active:scale-95"
                   >
                     {addedAnimation ? (
                       <>
@@ -338,7 +347,7 @@ export function ProductDetailModal({
                     ) : (
                       <>
                         <ShoppingCart size={20} />
-                        <span>Agregar al Carrito ({formatCOP(displayedProduct.price * quantity)})</span>
+                        <span>{purchaseType === 'couple' ? 'Agregar pareja' : 'Agregar al Carrito'} ({formatCOP(selectedPrice * quantity)})</span>
                       </>
                     )}
                   </button>
@@ -347,13 +356,13 @@ export function ProductDetailModal({
                   <button
                     type="button"
                     onClick={() => {
-                      onQuickOrder({ ...displayedProduct, quantity })
+                      onQuickOrder({ ...displayedProduct, price: selectedPrice, purchaseType, discountUnits: 1, cartLabel: purchaseType === 'couple' ? `${displayedProduct.name} · Promoción de pareja` : displayedProduct.name, quantity })
                       onClose()
                     }}
-                    className="w-full py-3 rounded-2xl bg-[#ebffd5] hover:bg-[#dffbbd] text-[#2c5315] font-heading text-sm font-extrabold border-2 border-[#b2e59b] flex items-center justify-center gap-2 transition-all shadow-2xs"
+                    className="w-full py-2.5 sm:py-3 rounded-2xl bg-[#ebffd5] hover:bg-[#dffbbd] text-[#2c5315] font-heading text-sm font-extrabold border-2 border-[#b2e59b] flex items-center justify-center gap-2 transition-all shadow-2xs"
                   >
                     <WhatsAppIcon size={18} />
-                    <span>Pedir por WhatsApp ahora</span>
+                    <span>{purchaseType === 'couple' ? 'Pedir pareja por WhatsApp' : 'Pedir por WhatsApp ahora'}</span>
                   </button>
                 </>
               ) : (
